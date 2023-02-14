@@ -1,6 +1,6 @@
-import { AbstractComponent } from "../../core/gui/abstract-component";
-import { PreferedSizeComponent } from "../../core/gui/directives/prefered-size-component";
-import { LayoutComponent } from "../../core/gui/layout-component";
+import { AbstractComponent } from "../../core/gui/proto-components/abstract-component";
+import { PreferedSizeComponent } from "../../core/gui/proto-components/prefered-size";
+import { LayoutComponent } from "../../core/gui/proto-components/layout-component";
 import { Vector2 } from "../../core/math/vector";
 
 export class Scaffold extends LayoutComponent {

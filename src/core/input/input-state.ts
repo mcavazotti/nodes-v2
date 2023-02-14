@@ -6,6 +6,8 @@ export interface InputState {
     mouseRawPosition?: Vector2;
     mouseButtonDown?: Set<MouseInputType>;
     mouseButtonUp?: MouseInputType;
+    click?:boolean;
+    doubleClick?:boolean;
     mouseMovement?: Vector2;
     mouseScroll?: MouseInputType.scrollDown | MouseInputType.scrollUp | null;
     keysDown?: Set<string>;

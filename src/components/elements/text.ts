@@ -1,5 +1,5 @@
-import { AbstractComponent, RenderFunc } from "../../core/gui/abstract-component";
-import { PreferedSizeComponent } from "../../core/gui/directives/prefered-size-component";
+import { AbstractComponent, RenderFunc } from "../../core/gui/proto-components/abstract-component";
+import { PreferedSizeComponent } from "../../core/gui/proto-components/prefered-size";
 import { GuiEngine } from "../../core/gui/gui-engine";
 import { Vector2 } from "../../core/math/vector";
 

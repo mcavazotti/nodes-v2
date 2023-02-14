@@ -1,4 +1,4 @@
-import { AbstractComponent, RenderFunc } from "../../core/gui/abstract-component";
+import { AbstractComponent, RenderFunc } from "../../core/gui/proto-components/abstract-component";
 import { Vector2 } from "../../core/math/vector";
 
 export class Container extends AbstractComponent {
@@ -16,8 +16,8 @@ export class Container extends AbstractComponent {
     renderProcedure(): RenderFunc {
         return (ctx) => {
             // TODO: use theme
-            ctx.fillStyle = 'cyan';
-            ctx.fillRect(this.position!.x, this.position!.y, this.size!.x, this.size!.y);
+            ctx.strokeStyle = 'black';
+            ctx.strokeRect(this.position!.x, this.position!.y, this.size!.x, this.size!.y);
         }
     }
 

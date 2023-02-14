@@ -1,5 +1,5 @@
-import { AbstractComponent } from "../../core/gui/abstract-component";
-import { LayoutComponent } from "../../core/gui/layout-component";
+import { AbstractComponent } from "../../core/gui/proto-components/abstract-component";
+import { LayoutComponent } from "../../core/gui/proto-components/layout-component";
 import { Vector2 } from "../../core/math/vector";
 
 export class Padding extends LayoutComponent {

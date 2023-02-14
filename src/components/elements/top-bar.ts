@@ -1,8 +1,8 @@
-import { AbstractComponent, RenderFunc } from "../../core/gui/abstract-component";
-import { PreferedSizeComponent } from "../../core/gui/directives/prefered-size-component";
+import { AbstractComponent, RenderFunc } from "../../core/gui/proto-components/abstract-component";
+import { PreferedSize } from "../../core/gui/proto-components/prefered-size";
 import { Vector2 } from "../../core/math/vector";
 
-export class TopBar extends AbstractComponent implements PreferedSizeComponent {
+export class TopBar extends AbstractComponent implements PreferedSize {
     height: number;
     constructor({ child, height }: { child?: AbstractComponent, height?: number }) {
         super();
@@ -23,8 +23,9 @@ export class TopBar extends AbstractComponent implements PreferedSizeComponent {
 
     renderProcedure(): RenderFunc {
         return (ctx) => {
-            ctx.fillStyle = 'tomato';
-            ctx.fillRect(this.position!.x, this.position!.y, this.size!.x, this.size!.y);
+            // ctx.fillStyle = 'tomato';
+            ctx.strokeStyle ='black';
+            ctx.strokeRect(this.position!.x, this.position!.y, this.size!.x, this.size!.y);
         }
     }
 }

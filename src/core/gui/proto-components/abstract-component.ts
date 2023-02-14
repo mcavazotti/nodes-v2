@@ -1,4 +1,4 @@
-import { Vector2 } from "../math/vector";
+import { Vector2 } from "../../math/vector";
 
 export interface RenderFunc {
     (ctx: CanvasRenderingContext2D): void;
@@ -10,6 +10,16 @@ export abstract class AbstractComponent {
     protected parent?: AbstractComponent;
     protected children?: AbstractComponent[];
     abstract renderProcedure(): RenderFunc;
+
+    getPosition(): Vector2 {
+        if (!this.position) throw Error("Layout has not been defined for this component");
+        return this.position!.copy();
+    }
+
+    getSize(): Vector2 {
+        if (!this.size) throw Error("Layout has not been defined for this component");
+        return this.size!.copy();
+    }
 
     getChildren(): AbstractComponent[] {
         if (this.children)

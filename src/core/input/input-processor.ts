@@ -55,8 +55,14 @@ export class InputProcessor {
             this.inputState.mouseButtonUp = mouseButton!;
         });
 
+        canvasElement.addEventListener('click', () => {
+            this.inputState.click = true;
+        });
+        canvasElement.addEventListener('dblclick', () => {
+            this.inputState.doubleClick = true;
+        });
+
         canvasElement.addEventListener("wheel", (event) => {
-            // TODO: this logic is wrong
             let wheelDirection = event.deltaY < 0 ? MouseInputType.scrollUp : MouseInputType.scrollDown;
             this.inputState.mouseScroll = wheelDirection;
         });
@@ -74,10 +80,16 @@ export class InputProcessor {
     }
 
     getInputState(): InputState {
-        return {
+        const state = {
             ...this.inputState,
             mouseButtonDown: new Set(this.inputState.mouseButtonDown),
             keysDown: new Set(this.inputState.keysDown)
         };
+        this.inputState.mouseButtonUp = undefined;
+        this.inputState.keyUp = undefined;
+        this.inputState.click = undefined;
+        this.inputState.doubleClick = undefined;
+        this.inputState.mouseScroll = null;
+        return state;
     }
 }

@@ -1,9 +1,9 @@
 
 
-import { TopBar, Container, Text } from "./src/components/elements-components";
+import { TopBar, Container, Text, Button } from "./src/components/elements-components";
 import { Column, Padding, Row, Scaffold } from "./src/components/layout-components";
 import { CanvasApp } from "./src/core/canvas-app";
-import { MainAxisJustify } from "./src/core/gui/constants/enums";
+import { MainAxisJustify } from "./src/core/gui/definitions/enums";
 
 const app = new CanvasApp('canvas',
     new Scaffold({
@@ -12,9 +12,12 @@ const app = new CanvasApp('canvas',
             child: new Padding({
                 all: 8,
                 child: new Row({
-                    justify: MainAxisJustify.start,
+                    justify: MainAxisJustify.spaceAround,
                     children: [
-                        new Text({ text: 'Lorem Ipsum' }),
+                        new Button({
+                            child: new Text({ text: 'Lorem Ipsum' }),
+                            click: () => {console.log("click!")}
+                        }),
                         new Text({ text: '2' }),
                         new Text({ text: '3' }),
                     ]

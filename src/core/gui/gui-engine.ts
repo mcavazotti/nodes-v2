@@ -1,4 +1,5 @@
-import { AbstractComponent, RenderFunc } from "./abstract-component";
+import { Vector2 } from "../math/vector";
+import { AbstractComponent, RenderFunc } from "./proto-components/abstract-component";
 
 export class GuiEngine {
     private static instance: GuiEngine
@@ -46,5 +47,12 @@ export class GuiEngine {
             componentQueue.push(...comp!.getChildren());
         }
         renderProcs.forEach(proc => proc(this.canvasContext));
+    }
+
+    isInsideBoundaries(component: AbstractComponent, point: Vector2): boolean {
+        const topLeft = component.getPosition();
+        const bottomRight = topLeft.add(component.getSize());
+        return point.x >= topLeft.x && point.x <= bottomRight.x
+            && point.y >= topLeft.y && point.y <= bottomRight.y;
     }
 }
