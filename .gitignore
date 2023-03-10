@@ -1,3 +1,4 @@
-node_modules
-dist
-.parcel-cache
+build/script/index.js
+build/script/index.js.map
+build/style/*.css
+build/style/*.css.map
