@@ -7,7 +7,7 @@ import { SocketPrototype } from "./types/socket-prototype";
 
 export abstract class BaseNode implements HTMLComponent {
     private static idCounter: number = 0;
-    private htmlElement!: HTMLDivElement;
+    private htmlElement: HTMLDivElement | null;
 
     protected _label!: string;
     protected _type!: NodeClass;
@@ -33,6 +33,8 @@ export abstract class BaseNode implements HTMLComponent {
         this.dirty = false;
         this._input = inputs.map((prototype, idx) => new Socket({ ...prototype, uId: `i-${this.uId}-${idx}` }));
         this._output = outputs.map((prototype, idx) => new Socket({ ...prototype, uId: `o-${this.uId}-${idx}` }));
+
+        this.htmlElement = null;
     }
 
     getHtml(): string {
@@ -42,21 +44,27 @@ export abstract class BaseNode implements HTMLComponent {
                 <span>${this.label}</span>
             </div>
             <div class="body">
-            ${
-                this.output.map((socket) => 
-                    `
+            ${this.output.map((socket) =>
+            `
                     <div class="socket-row output">
                         <span>${socket.label}</span>
-                        <div class="socket ${socket.type}"></div>
+                        <div class="socket ${socket.type}" id="socket-${socket.uId}"></div>
                     </div>
                     `
-                )
+        )
             }
             </div>
         </div>`;
     }
 
-    getOuterElement(): HTMLElement {
+    generateTemplate(): HTMLTemplateElement {
+        const template = document.createElement('template');
+        template.innerHTML = this.getHtml();
+        this.htmlElement = template.firstElementChild as HTMLDivElement;
+        return template;
+    }
+
+    getOuterElement(): HTMLElement | null {
         return this.htmlElement;
     }
 
@@ -64,7 +72,8 @@ export abstract class BaseNode implements HTMLComponent {
     }
 
     destroy(): void {
-        this.htmlElement.remove();
+        this.htmlElement?.remove();
+        this.htmlElement = null;
     }
 
     abstract code(): string;

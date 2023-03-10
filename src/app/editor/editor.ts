@@ -1,25 +1,47 @@
 import { Vector2 } from "../core/math/vector";
+import { BaseNode } from "../node/core/base-node";
 import { CoordinatesNode } from "../node/node-defs/input/coordinates.node";
+import { DragAction, getDragAction } from "./input-handler";
 
 export class NodeEditor {
-    private hostDiv: HTMLDivElement;
-    private canvasElement: HTMLCanvasElement;
-    private canvasContext: CanvasRenderingContext2D;
-    private boardDiv: HTMLDivElement;
+    private hostDiv!: HTMLDivElement;
+    private canvasElement!: HTMLCanvasElement;
+    private canvasContext!: CanvasRenderingContext2D;
+    private boardDiv!: HTMLDivElement;
+
+    private inputState: {
+        drag: DragAction | null;
+    }
+
+    private nodes: Map<string, BaseNode>;
 
     constructor(divId: string) {
+        const node = new CoordinatesNode(new Vector2());
+        this.nodes = new Map([[node.uId, node]]);
+
+        this.initializeHTML(divId);
+        this.setInputHandlers();
+        this.addNodesToBoard();
+
+        this.inputState = {
+            drag: null
+        };
+
+    }
+
+    initializeHTML(divId: string) {
         this.hostDiv = document.getElementById(divId) as HTMLDivElement;
         if (!this.hostDiv) throw Error("Couldn't find div with id: " + divId)
 
         const ui = document.createElement('template');
         ui.innerHTML = `
         <div style="height: 100%; width: 100%; display: flex; flex-direction: column;">
-            <div>
-                <button id="1">1</button>
-                <button id="2">2</button>
-                <button id="3">3</button>
-            </div>
-            <div style="position: relative">
+        <div>
+        <button id="1">1</button>
+        <button id="2">2</button>
+        <button id="3">3</button>
+        </div>
+        <div style="position: relative">
                 <canvas style="height: 100%; width: 100%;"></canvas>
                 <div id="board" style="height: 100%; width: 100%; position: absolute; left:0; top:0; overflow: hidden;"></div>
             </div>
@@ -30,44 +52,40 @@ export class NodeEditor {
         this.canvasContext = this.canvasElement.getContext('2d')!;
 
         this.boardDiv = document.getElementById('board') as HTMLDivElement;
+    }
 
-        const node = new CoordinatesNode(new Vector2());
-        const template = document.createElement('template');
-        template.innerHTML = node.getHtml();
+    addNodesToBoard() {
+        for (const node of this.nodes.values()) {
+            node.destroy();
+            this.boardDiv.appendChild(node.generateTemplate().content);
+        }
+    }
 
-        this.boardDiv.appendChild(template.content);
-
-        let drag: boolean = false;
-        let dragNode: HTMLDivElement;
-        let nodePos: Vector2;
-        let initialPos: Vector2;
-
+    setInputHandlers() {
         this.boardDiv.addEventListener('mousedown', (ev) => {
-            let element = ev.target as HTMLElement;
-            while(element && !element?.id.includes('node-')) element = element.parentElement!;
+            console.log(ev)
+            this.inputState.drag = getDragAction(ev);
 
-            
-            if (element) {
-                dragNode = element as HTMLDivElement;
-                drag = true;
-                initialPos = new Vector2(ev.clientX, ev.clientY);
-                nodePos = new Vector2(dragNode.offsetLeft, dragNode.offsetTop);
-            }
         });
 
         this.boardDiv.addEventListener('mouseup', (ev) => {
-            if (drag) drag = false;
+            if (this.inputState.drag) this.inputState.drag = null;
         });
 
         this.boardDiv.addEventListener('mousemove', (ev) => {
-            if (drag) {
-                dragNode.style.top = (nodePos.y + ev.clientY - initialPos.y) + 'px';
-                dragNode.style.left = (nodePos.x + ev.clientX - initialPos.x) + 'px';
+            if (this.inputState.drag) {
+                switch (this.inputState.drag.element) {
+                    case 'node':
+                        const htmlNode = this.inputState.drag.htmlElement!;
+                        const newPos = new Vector2((this.inputState.drag.elementPos!.x + ev.clientX - this.inputState.drag.initialMousePos.x), (this.inputState.drag.elementPos!.y + ev.clientY - this.inputState.drag.initialMousePos.y));
+                        htmlNode.style.top = newPos.y + 'px';
+                        htmlNode.style.left = newPos.x + 'px';
+
+                        const node = this.nodes.get(this.inputState.drag.id!.replace('node-', ''))!;
+                        node.position = newPos;
+                        break;
+                }
             }
         });
-
-        const button = document.getElementById('1') as HTMLButtonElement;
     }
-
-
 }
