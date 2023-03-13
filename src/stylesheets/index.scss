@@ -60,7 +60,30 @@ div.node {
                 border-radius: 50%;
                 width: 8px;
                 height: 8px;
-                border-color: tomato;
+                &.bool {
+                    background-color: theme.$socket-type-bool;
+                    border-color: adjust-color($color: theme.$socket-type-bool, $lightness: -20%); ;
+                }
+                &.float {
+                    background-color: theme.$socket-type-float;
+                    border-color: adjust-color($color: theme.$socket-type-float, $lightness: -20%); ;
+                }
+                &.vector2 {
+                    background-color: theme.$socket-type-vector2;
+                    border-color: adjust-color($color: theme.$socket-type-vector2, $lightness: -20%); ;
+                }
+                &.vector3 {
+                    background-color: theme.$socket-type-vector3;
+                    border-color: adjust-color($color: theme.$socket-type-vector3, $lightness: -20%); ;
+                }
+                &.vector4 {
+                    background-color: theme.$socket-type-vector4;
+                    border-color: adjust-color($color: theme.$socket-type-vector4, $lightness: -20%); ;
+                }
+                &.color {
+                    background-color: theme.$socket-type-color;
+                    border-color: adjust-color($color: theme.$socket-type-color, $lightness: -20%); ;
+                }
             }
         }
     }

@@ -6,6 +6,7 @@ $defaut-font: Arial;
 $board-bg-color: #4a4e61;
 
 
+// Node colors
 $node-bg-color: #aaaaaa;
 
 $node-type-input-bg: #6b1919;
@@ -13,3 +14,11 @@ $node-type-input-text: white;
 
 $node-type-output-bg: #196b42;
 $node-type-output-text: white;
+
+// Socket colors
+$socket-type-bool: #40c9de;
+$socket-type-float: #a740de;
+$socket-type-vector2: #50a16c;
+$socket-type-vector3: #ba7429;
+$socket-type-vector4: #4c80a6;
+$socket-type-color: #4c80a6;
