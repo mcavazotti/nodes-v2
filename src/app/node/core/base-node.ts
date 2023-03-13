@@ -60,7 +60,7 @@ export abstract class BaseNode implements HTMLComponent {
     generateTemplate(): HTMLTemplateElement {
         const template = document.createElement('template');
         template.innerHTML = this.getHtml();
-        this.htmlElement = template.firstElementChild as HTMLDivElement;
+        this.htmlElement = template.content.firstElementChild as HTMLDivElement;
         return template;
     }
 
