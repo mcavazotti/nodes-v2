@@ -35,6 +35,10 @@ div.node {
             background-color: theme.$node-type-input-bg;
             color: theme.$node-type-input-text;
         }
+        &.output{
+            background-color: theme.$node-type-output-bg;
+            color: theme.$node-type-output-text;
+        }
     }
 
     .body {
@@ -52,6 +56,11 @@ div.node {
             &.output {
                 margin-right: 0 - 6px;
                 margin-left: theme.$defaut-margin * 2;
+            }
+            &.input {
+                flex-direction: row-reverse;
+                margin-left: 0 - 6px;
+                margin-right: theme.$defaut-margin * 2;
             }
 
             .socket {

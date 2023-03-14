@@ -1,7 +1,7 @@
 import { Vector2 } from "../core/math/vector";
 import { Camera } from "../core/render/camera";
 import { BaseNode } from "../node/core/base-node";
-import { CoordinatesNode } from "../node/node-defs/input/coordinates.node";
+import { OutputNode } from "../node/node-defs/output/output.node";
 import { DragAction, getDragAction } from "./input-handler";
 
 export class NodeEditor {
@@ -19,7 +19,7 @@ export class NodeEditor {
     private nodes: Map<string, BaseNode>;
 
     constructor(divId: string) {
-        const node = new CoordinatesNode(new Vector2());
+        const node = new OutputNode(new Vector2());
         this.nodes = new Map([[node.uId, node]]);
 
         this.initializeHTML(divId);
@@ -71,7 +71,8 @@ export class NodeEditor {
 
     setInputHandlers() {
         this.boardDiv.addEventListener('mousedown', (ev) => {
-            this.inputState.drag = getDragAction(ev, this.camera);
+            if (ev.button == 0)
+                this.inputState.drag = getDragAction(ev, this.camera);
 
         });
 
@@ -105,6 +106,31 @@ export class NodeEditor {
                         }
                 }
             }
+        });
+
+        this.boardDiv.addEventListener('wheel', (ev) => {
+            
+            // const mouseWorldPos = this.camera.convertRasterToWorld(new Vector2(ev.clientX, ev.clientY));
+            
+            if (ev.deltaY > 0) {
+                this.camera.zoom = Math.min(this.camera.zoom + 1, 10);
+            }
+            if (ev.deltaY < 0) {
+                this.camera.zoom = Math.max(this.camera.zoom - 1, 1);
+            }
+            
+            // const newMouseWorldPos = this.camera.convertRasterToWorld(new Vector2(ev.clientX, ev.clientY));
+            // const offset = newMouseWorldPos.sub(mouseWorldPos);
+            // this.camera.position = this.camera.position.sub(offset);
+            // console.log(this.camera.position.toJSON());
+
+            for (const n of this.nodes.values()) {
+                n.getOuterElement()!.style.transform = `scale(${1 / this.camera.zoom})`;
+                this.setNodePosition(n);
+            }
+
+
+
         });
     }
 
