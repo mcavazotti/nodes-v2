@@ -42,6 +42,10 @@ class ColorRGB extends Vector3 {
     toHex(htmlFormat: boolean = true): string {
         return `${htmlFormat ? '#' : ''}${Math.round(this.r * 255).toString(16).padStart(2, '0')}${Math.round(this.g * 255).toString(16).padStart(2, '0')}${Math.round(this.b * 255).toString(16).padStart(2, '0')}`.toUpperCase();
     }
+
+    toJSON(): string {
+        return this.toHex(true);
+    }
 }
 
 class ColorRGBA extends Vector4 {
@@ -97,6 +101,10 @@ class ColorRGBA extends Vector4 {
 
     toHex(htmlFormat: boolean = true): string {
         return `${htmlFormat ? '#' : ''}${Math.round(this.r * 255).toString(16).padStart(2, '0')}${Math.round(this.g * 255).toString(16).padStart(2, '0')}${Math.round(this.b * 255).toString(16).padStart(2, '0')}`.toUpperCase();
+    }
+
+    toJSON() {
+        return this.toHex(true);
     }
 
 }

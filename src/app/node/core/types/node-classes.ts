@@ -4,3 +4,10 @@ export enum NodeClass {
     mathOp = "mathOp",
     output = "output"
 }
+
+export enum NodeId {
+    // input
+    coordinates = "coordinates",
+    // output
+    output = "output",
+}

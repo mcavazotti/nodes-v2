@@ -12,8 +12,8 @@ abstract class Vector {
         return `(${stringValue})`;
     }
 
-    toJSON(){
-        return JSON.stringify(this.v);
+    toJSON(): number[] | string{
+        return this.v;
     }
 }
 
