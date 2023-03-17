@@ -34,6 +34,8 @@ export class NodeEngine {
     }
 
     importNodes(jsonContent: SerializedNode[]) {
+        this._nodes.clear();
+        this._sockets.clear();
         for (const n of jsonContent) {
             switch (n.nodeId) {
                 case NodeId.output:
@@ -50,5 +52,7 @@ export class NodeEngine {
         return Array.from(this._nodes.values()).map(n => n.toJSON());
     }
 
-
+    getSocketParent(socket: Socket<unknown>): BaseNode {
+        return this._nodes.get(socket.uId.match(/n-\d{4}/)![0])!
+    }
 }

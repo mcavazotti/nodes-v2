@@ -47,18 +47,23 @@ export abstract class BaseNode implements HTMLComponent {
             },
             position: {
                 value: new Vector2(json.position[0], json.position[1]),
+                writable: true
             },
             _label: {
                 value: json.label,
+                writable: true
             },
             _type: {
                 value: json.type,
+                writable: false
             },
             _input: {
                 value: json.input.map(s => Socket.fromJson(s)),
+                writable: true
             },
             _output: {
                 value: json.output.map(s => Socket.fromJson(s)),
+                writable: true
             },
 
         }) as T;
@@ -70,7 +75,7 @@ export abstract class BaseNode implements HTMLComponent {
         this._type = nodeType;
         this.position = pos;
         this.dirty = false;
-        this._input = inputs.map((prototype, idx) => new Socket({ ...prototype, uId: `i-${this.uId}-${idx}`}));
+        this._input = inputs.map((prototype, idx) => new Socket({ ...prototype, uId: `i-${this.uId}-${idx}` }));
         this._output = outputs.map((prototype, idx) => new Socket({ ...prototype, uId: `o-${this.uId}-${idx}` }));
 
         this.htmlElement = null;
@@ -151,6 +156,8 @@ export abstract class BaseNode implements HTMLComponent {
     }
 
     generateTemplate(): HTMLTemplateElement {
+        if (this.htmlElement) return this.htmlElement.parentElement as HTMLTemplateElement;
+
         const template = document.createElement('template');
         template.innerHTML = this.getHtml();
         this.htmlElement = template.content.firstElementChild as HTMLDivElement;
@@ -162,6 +169,97 @@ export abstract class BaseNode implements HTMLComponent {
     }
 
     setListeners(): void {
+        for (const socket of this._input) {
+            switch (socket.type) {
+                case SocketType.bool: {
+                    const input = document.getElementById(`input-${socket.uId}`) as HTMLInputElement;
+                    if (input) {
+                        input.addEventListener('click', () => {
+                            socket.value = input.checked;
+                        });
+                    }
+                    break;
+                }
+                case SocketType.float: {
+                    const input = document.getElementById(`input-${socket.uId}`) as HTMLInputElement;
+                    if (input) {
+                        input.addEventListener('change', () => {
+                            socket.value = input.valueAsNumber;
+                        });
+                    }
+                    break;
+                }
+                case SocketType.vector2: {
+                    const x = document.getElementById(`input-${socket.uId}-x`) as HTMLInputElement;
+                    const y = document.getElementById(`input-${socket.uId}-y`) as HTMLInputElement;
+                    if (x && y) {
+                        x.addEventListener('change', () => {
+                            if (!socket.value) socket.value = new Vector2(x.valueAsNumber);
+                            (socket.value as Vector2).x = x.valueAsNumber;
+                        });
+                        y.addEventListener('change', () => {
+                            if (!socket.value) socket.value = new Vector2(0, y.valueAsNumber);
+                            (socket.value as Vector2).y = y.valueAsNumber;
+                        });
+                    }
+                    break;
+                }
+                case SocketType.vector3: {
+                    const x = document.getElementById(`input-${socket.uId}-x`) as HTMLInputElement;
+                    const y = document.getElementById(`input-${socket.uId}-y`) as HTMLInputElement;
+                    const z = document.getElementById(`input-${socket.uId}-z`) as HTMLInputElement;
+                    if (x && y && z) {
+                        x.addEventListener('change', () => {
+                            if (!socket.value) socket.value = new Vector3(x.valueAsNumber);
+                            (socket.value as Vector3).x = x.valueAsNumber;
+                        });
+                        y.addEventListener('change', () => {
+                            if (!socket.value) socket.value = new Vector3(0, y.valueAsNumber);
+                            (socket.value as Vector3).y = y.valueAsNumber;
+                        });
+                        z.addEventListener('change', () => {
+                            if (!socket.value) socket.value = new Vector3(0, 0, z.valueAsNumber);
+                            (socket.value as Vector3).z = z.valueAsNumber;
+                        });
+                    }
+                    break;
+                }
+                case SocketType.vector4: {
+                    const x = document.getElementById(`input-${socket.uId}-x`) as HTMLInputElement;
+                    const y = document.getElementById(`input-${socket.uId}-y`) as HTMLInputElement;
+                    const z = document.getElementById(`input-${socket.uId}-z`) as HTMLInputElement;
+                    const w = document.getElementById(`input-${socket.uId}-w`) as HTMLInputElement;
+                    if (x && y && z && w) {
+                        x.addEventListener('change', () => {
+                            if (!socket.value) socket.value = new Vector4(x.valueAsNumber);
+                            (socket.value as Vector4).x = x.valueAsNumber;
+                        });
+                        y.addEventListener('change', () => {
+                            if (!socket.value) socket.value = new Vector4(0, y.valueAsNumber);
+                            (socket.value as Vector4).y = y.valueAsNumber;
+                        });
+                        z.addEventListener('change', () => {
+                            if (!socket.value) socket.value = new Vector4(0, 0, z.valueAsNumber);
+                            (socket.value as Vector4).z = z.valueAsNumber;
+                        });
+                        w.addEventListener('change', () => {
+                            if (!socket.value) socket.value = new Vector4(0, 0, 0, w.valueAsNumber);
+                            (socket.value as Vector4).w = w.valueAsNumber;
+                        });
+                    }
+                    break;
+                }
+                case SocketType.color: {
+                    const input = document.getElementById(`input-${socket.uId}`) as HTMLInputElement;
+                    if (input) {
+                        input.addEventListener('change', () => {
+                            socket.value = new ColorRGB(input.value);
+                        });
+                    }
+                    break;
+                }
+            }
+        }
     }
 
     destroy(): void {
