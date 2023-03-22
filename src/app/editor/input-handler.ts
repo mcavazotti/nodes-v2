@@ -10,12 +10,17 @@ export interface DragAction {
     elementPos?: Vector2;
 }
 
+export interface SelectAction {
+    element: 'node';
+    id: string;
+}
+
 export function getDragAction(event: MouseEvent, camera: Camera): DragAction | null {
     let element = event.target as HTMLElement;
     if (element.id?.includes('socket-'))
         return {
             element: 'socket',
-            id: element.id,
+            id: element.dataset.socketId,
             initialMousePos: new Vector2(event.clientX, event.clientY),
             initialMousePosWorld: camera.convertRasterToWorld(new Vector2(event.clientX, event.clientY)),
             elementPos: new Vector2(element.offsetLeft, element.offsetTop),
@@ -34,7 +39,7 @@ export function getDragAction(event: MouseEvent, camera: Camera): DragAction | n
     if (element)
         return {
             element: 'node',
-            id: element.id,
+            id: element.dataset.nodeId,
             initialMousePos: new Vector2(event.clientX, event.clientY),
             initialMousePosWorld: camera.convertRasterToWorld(new Vector2(event.clientX, event.clientY)),
             elementPos: new Vector2(element.offsetLeft, element.offsetTop),

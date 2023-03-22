@@ -24,6 +24,11 @@ div.node {
     border-style: solid;
     border-width: 2px;
     border-color: adjust-color($color:  theme.$node-bg-color, $lightness: -40%);
+    
+    &.selected {
+        // border-width: 3px;
+        border-color: theme.$node-selected-border-color;
+    }
 
     .header {
         padding: theme.$defaut-padding * 0.5;

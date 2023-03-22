@@ -3,7 +3,7 @@ import { Camera } from "../core/render/camera";
 import { BaseNode } from "../node/core/base-node";
 import { NodeEngine } from "../node/core/node-engine";
 import { OutputNode } from "../node/node-defs/output/output.node";
-import { DragAction, getDragAction } from "./input-handler";
+import { DragAction, getDragAction, SelectAction } from "./input-handler";
 
 export class NodeEditor {
     private hostDiv!: HTMLDivElement;
@@ -13,6 +13,7 @@ export class NodeEditor {
 
     private inputState: {
         drag: DragAction | null;
+        select: SelectAction | null;
     }
 
     private camera: Camera;
@@ -20,17 +21,19 @@ export class NodeEditor {
     private nodeEngine: NodeEngine;
 
     constructor(divId: string) {
-        this.nodeEngine = new NodeEngine();
+        this.nodeEngine = new NodeEngine([]);
 
         this.nodeEngine.addNode(new OutputNode(new Vector2()));
 
         this.initializeHTML(divId);
         this.camera = new Camera(new Vector2(), 1, new Vector2(this.boardDiv.clientWidth, this.boardDiv.clientHeight));
         this.setInputHandlers();
+        this.setButtonListeners();
         this.addNodesToBoard();
 
         this.inputState = {
-            drag: null
+            drag: null,
+            select: null,
         };
 
 
@@ -48,9 +51,14 @@ export class NodeEditor {
                 <button id="load">Load</button>
                 <button id="3">3</button>
             </div>
-            <div style="position: relative">
-                <canvas style="height: 100%; width: 100%;"></canvas>
-                <div id="board" style="height: 100%; width: 100%; position: absolute; left:0; top:0; overflow: hidden;"></div>
+            <div style="display: flex; flex-direction: row; flex-grow:1;">
+                <div style="position: relative; margin: 8px;">
+                    <canvas style="height: 100%; width: 100%;"></canvas>
+                    <div id="board" style="height: 100%; width: 100%; position: absolute; left:0; top:0; overflow: hidden;"></div>
+                </div>
+                <div style="margin: 8px;">
+                    <canvas id="gl-output" height=300 width=300></canvas>
+                </div>
             </div>
         </div>
         `;
@@ -73,10 +81,24 @@ export class NodeEditor {
 
 
 
-    setInputHandlers() {
+    private setInputHandlers() {
         this.boardDiv.addEventListener('mousedown', (ev) => {
-            if (ev.button == 0)
+            if (ev.button == 0) {
                 this.inputState.drag = getDragAction(ev, this.camera);
+                if (this.inputState.drag?.element == 'node') {
+                    this.inputState.select = {
+                        element: 'node',
+                        id: this.inputState.drag.id!
+                    };
+                    this.nodeEngine.getNodeById(this.inputState.select.id)!.setSelection(true);
+                } else {
+                    if (this.inputState.select) {
+                        this.nodeEngine.getNodeById(this.inputState.select.id)!.setSelection(false);
+                    }
+                    this.inputState.select = null;
+                }
+
+            }
 
         });
 
@@ -94,7 +116,7 @@ export class NodeEditor {
                             htmlNode.style.top = newPos.y + 'px';
                             htmlNode.style.left = newPos.x + 'px';
 
-                            const node = this.nodeEngine.getNodeById(this.inputState.drag.id!.replace('node-', ''))!;
+                            const node = this.nodeEngine.getNodeById(this.inputState.drag.id!)!;
                             node.position = this.camera.convertRasterToWorld(newPos);
                             break;
                         }
@@ -136,7 +158,9 @@ export class NodeEditor {
 
 
         });
+    }
 
+    private setButtonListeners() {
         document.getElementById('save')!.addEventListener('click', () => {
             const file = new Blob([JSON.stringify(this.nodeEngine.exportNodes())], { type: 'text/plain' });
             const a = document.createElement('a');
@@ -160,7 +184,6 @@ export class NodeEditor {
             })
             input.click();
         })
-
     }
 
     setNodePosition(node: BaseNode) {

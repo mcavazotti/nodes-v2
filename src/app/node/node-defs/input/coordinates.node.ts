@@ -5,7 +5,7 @@ import { SocketType } from "../../core/types/socket-types";
 
 export class CoordinatesNode extends BaseNode {
     nodeId = NodeId.coordinates;
-    
+
     constructor(pos: Vector2) {
         super(pos, NodeClass.input,
             [],
@@ -13,12 +13,12 @@ export class CoordinatesNode extends BaseNode {
         this._label = 'Coordinates';
 
     }
+    
     code(): string {
-        throw new Error("Method not implemented.");
+        return `vec2 ${this.output[0].getVariableName()} = gl_FragCoord.xy / uResolution;\n`;
     }
+
     definitions(): [string, string][] {
-        throw new Error("Method not implemented.");
+        return []
     }
-
-
 }

@@ -5,11 +5,12 @@ import { Vector2, Vector3, Vector4 } from "../../core/math/vector";
 import { HTMLComponent } from "../../core/render/html-component";
 import { SocketPrototype } from "./types/socket-prototype";
 import { SocketType } from "./types/socket-types";
-import { ColorRGB } from "../../core/math/color";
+import {  ColorRGBA } from "../../core/math/color";
 import { SerializedNode } from "./types/serialized-types";
-// import { SerializedNode } from "./types/serialized-types";
+import { Selectable } from "../../core/render/selectable";
+import { NodeCompiler } from "./compiler/node-compiler";
 
-export abstract class BaseNode implements HTMLComponent {
+export abstract class BaseNode implements HTMLComponent, Selectable {
     private static idCounter: number = 0;
 
     static setCounter(num: number) {
@@ -34,6 +35,7 @@ export abstract class BaseNode implements HTMLComponent {
     readonly uId: string;
     position: Vector2;
     dirty: boolean;
+    selected: boolean;
 
     static fromJSON<T extends BaseNode>(type: new (...args: any[]) => T, json: SerializedNode) {
         return Object.create(type.prototype, {
@@ -79,11 +81,21 @@ export abstract class BaseNode implements HTMLComponent {
         this._output = outputs.map((prototype, idx) => new Socket({ ...prototype, uId: `o-${this.uId}-${idx}` }));
 
         this.htmlElement = null;
+        this.selected = false;
+    }
+
+    setSelection(selectState: boolean): void {
+        this.selected = selectState;
+        if (!this.getOuterElement()) this.generateTemplate();
+        if (selectState)
+            this.getOuterElement()!.classList.add('selected');
+        else
+            this.getOuterElement()!.classList.remove('selected');
     }
 
     getHtml(): string {
         return `
-        <div id="node-${this.uId}" class="node">
+        <div id="node-${this.uId}" class="node" data-node-id="${this.uId}">
             <div class="header ${this.type}">
                 <span>${this.label}</span>
             </div>
@@ -92,7 +104,7 @@ export abstract class BaseNode implements HTMLComponent {
             `
                     <div class="socket-row output">
                         <span>${socket.label}</span>
-                        <div class="socket ${socket.type}" id="socket-${socket.uId}"></div>
+                        <div class="socket ${socket.type}" id="socket-${socket.uId}" data-socket-id="${socket.uId}"></div>
                     </div>
                     `
         )}
@@ -101,7 +113,7 @@ export abstract class BaseNode implements HTMLComponent {
             `
                     <div class="socket-row input">
                         <span>${socket.label}</span>
-                        <div class="socket ${socket.type}" id="socket-${socket.uId}"></div>
+                        <div class="socket ${socket.type}" id="socket-${socket.uId}" data-socket-id="${socket.uId}"></div>
                     </div>
                     ${socket.connection ? '' : `<div class="socket-row">${this.generateInput(socket)}</div>`}
                 `
@@ -149,7 +161,7 @@ export abstract class BaseNode implements HTMLComponent {
                 </div>`;
             }
             case SocketType.color: {
-                const s = socket as Socket<ColorRGB>;
+                const s = socket as Socket<ColorRGBA>;
                 return `<input type="color" id="input-${socket.uId}" value="${s.value?.toHex()}" />`;
             }
         }
@@ -169,6 +181,7 @@ export abstract class BaseNode implements HTMLComponent {
     }
 
     setListeners(): void {
+        const nodeCompiler = NodeCompiler.getInstance();
         for (const socket of this._input) {
             switch (socket.type) {
                 case SocketType.bool: {
@@ -176,6 +189,7 @@ export abstract class BaseNode implements HTMLComponent {
                     if (input) {
                         input.addEventListener('click', () => {
                             socket.value = input.checked;
+                            nodeCompiler.compile();
                         });
                     }
                     break;
@@ -185,6 +199,7 @@ export abstract class BaseNode implements HTMLComponent {
                     if (input) {
                         input.addEventListener('change', () => {
                             socket.value = input.valueAsNumber;
+                            nodeCompiler.compile();
                         });
                     }
                     break;
@@ -196,10 +211,12 @@ export abstract class BaseNode implements HTMLComponent {
                         x.addEventListener('change', () => {
                             if (!socket.value) socket.value = new Vector2(x.valueAsNumber);
                             (socket.value as Vector2).x = x.valueAsNumber;
+                            nodeCompiler.compile();
                         });
                         y.addEventListener('change', () => {
                             if (!socket.value) socket.value = new Vector2(0, y.valueAsNumber);
                             (socket.value as Vector2).y = y.valueAsNumber;
+                            nodeCompiler.compile();
                         });
                     }
                     break;
@@ -212,14 +229,17 @@ export abstract class BaseNode implements HTMLComponent {
                         x.addEventListener('change', () => {
                             if (!socket.value) socket.value = new Vector3(x.valueAsNumber);
                             (socket.value as Vector3).x = x.valueAsNumber;
+                            nodeCompiler.compile();
                         });
                         y.addEventListener('change', () => {
                             if (!socket.value) socket.value = new Vector3(0, y.valueAsNumber);
                             (socket.value as Vector3).y = y.valueAsNumber;
+                            nodeCompiler.compile();
                         });
                         z.addEventListener('change', () => {
                             if (!socket.value) socket.value = new Vector3(0, 0, z.valueAsNumber);
                             (socket.value as Vector3).z = z.valueAsNumber;
+                            nodeCompiler.compile();
                         });
                     }
                     break;
@@ -233,18 +253,22 @@ export abstract class BaseNode implements HTMLComponent {
                         x.addEventListener('change', () => {
                             if (!socket.value) socket.value = new Vector4(x.valueAsNumber);
                             (socket.value as Vector4).x = x.valueAsNumber;
+                            nodeCompiler.compile();
                         });
                         y.addEventListener('change', () => {
                             if (!socket.value) socket.value = new Vector4(0, y.valueAsNumber);
                             (socket.value as Vector4).y = y.valueAsNumber;
+                            nodeCompiler.compile();
                         });
                         z.addEventListener('change', () => {
                             if (!socket.value) socket.value = new Vector4(0, 0, z.valueAsNumber);
                             (socket.value as Vector4).z = z.valueAsNumber;
+                            nodeCompiler.compile();
                         });
                         w.addEventListener('change', () => {
                             if (!socket.value) socket.value = new Vector4(0, 0, 0, w.valueAsNumber);
                             (socket.value as Vector4).w = w.valueAsNumber;
+                            nodeCompiler.compile();
                         });
                     }
                     break;
@@ -253,7 +277,8 @@ export abstract class BaseNode implements HTMLComponent {
                     const input = document.getElementById(`input-${socket.uId}`) as HTMLInputElement;
                     if (input) {
                         input.addEventListener('change', () => {
-                            socket.value = new ColorRGB(input.value);
+                            socket.value = new ColorRGBA(input.value);
+                            nodeCompiler.compile();
                         });
                     }
                     break;

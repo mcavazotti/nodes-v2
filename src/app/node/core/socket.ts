@@ -1,4 +1,4 @@
-import { ColorRGB } from "../../core/math/color";
+import { ColorRGBA } from "../../core/math/color";
 import { Vector2, Vector3, Vector4 } from "../../core/math/vector";
 import { BaseNode } from "./base-node";
 import { SerializedSocket } from "./types/serialized-types";
@@ -21,7 +21,7 @@ export class Socket<T> {
         if (socket.value) {
             switch (socket.type) {
                 case SocketType.color: {
-                    socket.value = new ColorRGB(socket.value as string);
+                    socket.value = new ColorRGBA(socket.value as string);
                     break;
                 }
                 case SocketType.vector2: {
@@ -65,5 +65,13 @@ export class Socket<T> {
             hidden: this.hidden,
             value: this.value
         };
+    }
+
+    getVariableName(): string {
+        return Socket.getVariableNameForId(this.uId);
+    }
+
+    static getVariableNameForId(id: string): string {
+        return id.replace(/\-/g, '');
     }
 }
