@@ -88,9 +88,9 @@ export abstract class BaseNode implements HTMLComponent, Selectable {
         this.selected = selectState;
         if (!this.getOuterElement()) this.generateTemplate();
         if (selectState)
-            this.getOuterElement()!.classList.add('selected');
+            this.getOuterElement()!.classList.add('selected', 'top');
         else
-            this.getOuterElement()!.classList.remove('selected');
+            this.getOuterElement()!.classList.remove('selected', 'top');
     }
 
     getHtml(): string {

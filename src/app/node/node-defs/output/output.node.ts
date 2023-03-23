@@ -11,7 +11,7 @@ export class OutputNode extends BaseNode {
 
     constructor(pos: Vector2) {
         super(pos, NodeClass.output,
-            [{ label: 'Color', role: 'input', hidden: false, type: SocketType.color, value: new ColorRGBA(0, 0, 0,0) }],
+            [{ label: 'Color', role: 'input', hidden: false, type: SocketType.color, value: new ColorRGBA(0, 0, 0,1) }],
             [],
         );
         this._label = 'Output';

@@ -1,7 +1,10 @@
 import { Vector2 } from "../core/math/vector";
 import { Camera } from "../core/render/camera";
+import { GlEnviroment } from "../gl/gl-enviroment";
 import { BaseNode } from "../node/core/base-node";
+import { NodeCompiler } from "../node/core/compiler/node-compiler";
 import { NodeEngine } from "../node/core/node-engine";
+import { CoordinatesNode } from "../node/node-defs/input/coordinates.node";
 import { OutputNode } from "../node/node-defs/output/output.node";
 import { DragAction, getDragAction, SelectAction } from "./input-handler";
 
@@ -19,17 +22,22 @@ export class NodeEditor {
     private camera: Camera;
 
     private nodeEngine: NodeEngine;
+    private glEnviroment: GlEnviroment;
 
     constructor(divId: string) {
-        this.nodeEngine = new NodeEngine([]);
+        this.initializeHTML(divId);
+        this.setInputHandlers();
+        this.setButtonListeners();
+
+        this.glEnviroment = new GlEnviroment('gl-output');
+        this.nodeEngine = new NodeEngine(this.glEnviroment.uniforms, (code) => this.glEnviroment.refreshProgram(code));
 
         this.nodeEngine.addNode(new OutputNode(new Vector2()));
 
-        this.initializeHTML(divId);
         this.camera = new Camera(new Vector2(), 1, new Vector2(this.boardDiv.clientWidth, this.boardDiv.clientHeight));
-        this.setInputHandlers();
-        this.setButtonListeners();
         this.addNodesToBoard();
+
+        NodeCompiler.getInstance().compile();
 
         this.inputState = {
             drag: null,
@@ -45,19 +53,34 @@ export class NodeEditor {
 
         const ui = document.createElement('template');
         ui.innerHTML = `
-        <div style="height: 100%; width: 100%; display: flex; flex-direction: column;">
-            <div>
-                <button id="save">Save</button>
-                <button id="load">Load</button>
+        <div style="height: 100%; width: 100%; display: flex; flex-direction: column">
+            <div style="margin: 0 8px">
+                <button id="btn-save">Save</button>
+                <button id="btn-load">Load</button>
                 <button id="3">3</button>
             </div>
             <div style="display: flex; flex-direction: row; flex-grow:1;">
                 <div style="position: relative; margin: 8px;">
                     <canvas style="height: 100%; width: 100%;"></canvas>
-                    <div id="board" style="height: 100%; width: 100%; position: absolute; left:0; top:0; overflow: hidden;"></div>
+                    <div id="board" style="height: 100%; width: 100%; position: absolute; left:0; top:0; overflow: hidden;" tabindex="0"></div>
                 </div>
                 <div style="margin: 8px;">
                     <canvas id="gl-output" height=300 width=300></canvas>
+                </div>
+            </div>
+            <div style="display: flex; gap: 1rem; margin: 0 8px">
+                <div class="button-field">
+                    <h4>Input</h4>
+                    <div>
+                        <button id="btn-coordinates">Coordinates</button>
+                    </div>
+                </div>
+                <div class="button-field">
+                    <h4>Conversion</h4>
+                    <div>
+                        <button id="btn-separate">Separate</button>
+                        <button id="btn-join">Join</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -85,6 +108,10 @@ export class NodeEditor {
         this.boardDiv.addEventListener('mousedown', (ev) => {
             if (ev.button == 0) {
                 this.inputState.drag = getDragAction(ev, this.camera);
+                if (this.inputState.select && this.inputState.select.id != this.inputState.drag?.id)
+                    this.nodeEngine.getNodeById(this.inputState.select.id)!.setSelection(false);
+
+
                 if (this.inputState.drag?.element == 'node') {
                     this.inputState.select = {
                         element: 'node',
@@ -135,9 +162,6 @@ export class NodeEditor {
         });
 
         this.boardDiv.addEventListener('wheel', (ev) => {
-
-            // const mouseWorldPos = this.camera.convertRasterToWorld(new Vector2(ev.clientX, ev.clientY));
-
             if (ev.deltaY > 0) {
                 this.camera.zoom = Math.min(this.camera.zoom + 1, 10);
             }
@@ -145,31 +169,41 @@ export class NodeEditor {
                 this.camera.zoom = Math.max(this.camera.zoom - 1, 1);
             }
 
-            // const newMouseWorldPos = this.camera.convertRasterToWorld(new Vector2(ev.clientX, ev.clientY));
-            // const offset = newMouseWorldPos.sub(mouseWorldPos);
-            // this.camera.position = this.camera.position.sub(offset);
-            // console.log(this.camera.position.toJSON());
-
             for (const n of this.nodeEngine.getNodes()) {
                 n.getOuterElement()!.style.transform = `scale(${1 / this.camera.zoom})`;
+                n.getOuterElement()!.style.transformOrigin = `top left`;
                 this.setNodePosition(n);
             }
 
 
 
         });
+
+        this.boardDiv.addEventListener('keydown', (ev) => {
+            console.log(ev.code)
+            switch (ev.code) {
+                case 'KeyX':
+                case 'Delete':
+                    if (this.inputState.select) {
+                        const node = this.nodeEngine.getNodeById(this.inputState.select.id)!;
+                        if (this.nodeEngine.removeNode(node))
+                            this.inputState.select = null;
+                    }
+                    break;
+            }
+        });
     }
 
     private setButtonListeners() {
-        document.getElementById('save')!.addEventListener('click', () => {
+        document.getElementById('btn-save')!.addEventListener('click', () => {
             const file = new Blob([JSON.stringify(this.nodeEngine.exportNodes())], { type: 'text/plain' });
             const a = document.createElement('a');
             a.href = URL.createObjectURL(file);
             a.download = 'nodes.json';
             a.click();
             a.remove();
-        })
-        document.getElementById('load')!.addEventListener('click', () => {
+        });
+        document.getElementById('btn-load')!.addEventListener('click', () => {
             const input = document.createElement('input');
             input.type = 'file';
             input.addEventListener('change', () => {
@@ -183,7 +217,20 @@ export class NodeEditor {
                 }
             })
             input.click();
-        })
+        });
+
+        this.setNodeButtonListeners([
+            ['btn-coordinates',CoordinatesNode]
+        ]);
+    }
+
+    private setNodeButtonListeners(buttonEntries: [string, new (...args: any[]) => BaseNode][] ) {
+        for(const button of buttonEntries ) {
+            document.getElementById(button[0])!.addEventListener('click', () => {
+                this.nodeEngine.addNode(new button[1](this.camera.position.copy()));
+                this.addNodesToBoard();
+            });
+        }
     }
 
     setNodePosition(node: BaseNode) {

@@ -1,7 +1,7 @@
 import { CoordinatesNode } from "../node-defs/input/coordinates.node";
 import { OutputNode } from "../node-defs/output/output.node";
 import { BaseNode } from "./base-node";
-import { NodeCompiler } from "./compiler/node-compiler";
+import { CompilationDoneFunc, NodeCompiler } from "./compiler/node-compiler";
 import { Socket } from "./socket";
 import { NodeClass, NodeId } from "./types/node-classes";
 import { SerializedNode } from "./types/serialized-types";
@@ -11,7 +11,8 @@ export class NodeEngine {
     private _sockets: Map<string, Socket<unknown>> = new Map();
     private _nodeCompiler: NodeCompiler = NodeCompiler.getInstance();
 
-    constructor(private uniforms: string[]) {
+
+    constructor(private uniforms: string[], private compileCalback: CompilationDoneFunc) {
         this._nodeCompiler.setCompileRequestListener(() => {
             return {
                 nodes: this._nodes,
@@ -21,6 +22,7 @@ export class NodeEngine {
         });
         this._nodeCompiler.setCompilationDoneListener((code) => {
             console.log(code);
+            this.compileCalback(code);
         })
     }
     getRootNode() {
@@ -40,8 +42,8 @@ export class NodeEngine {
         node.output.forEach(s => this._sockets.set(s.uId, s));
     }
 
-    removeNode(node: BaseNode) {
-        if (node.nodeId == NodeId.output) return;
+    removeNode(node: BaseNode): boolean {
+        if (node.nodeId == NodeId.output) return false;
         node.output.forEach(socket =>
             Array.from(this._sockets.values())
                 .filter(s => s.role == 'input' && s.connection && s.connection[0] == socket.uId)
@@ -49,7 +51,10 @@ export class NodeEngine {
         );
         node.input.forEach(s => this._sockets.delete(s.uId));
         node.output.forEach(s => this._sockets.delete(s.uId));
+
+        node.destroy();
         this._nodes.delete(node.uId);
+        return true
     }
 
     importNodes(jsonContent: SerializedNode[]) {
