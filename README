@@ -1,0 +1,6 @@
+# WEBGL Image Node Editor
+This is a personal project to implement a simple node editor inspired by Blender's node editors. 
+
+The main design idea is to create a self-contained Typescript framework-agnostic class that can be imported into a web app and used with minimal configuration.
+
+This project uses Typescript and SCSS.
