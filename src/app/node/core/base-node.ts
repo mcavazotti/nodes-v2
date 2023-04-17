@@ -10,14 +10,12 @@ import { SerializedNode } from "./types/serialized-types";
 import { Selectable } from "../../core/render/selectable";
 import { NodeCompiler } from "./compiler/node-compiler";
 
-export abstract class BaseNode implements HTMLComponent, Selectable {
+export abstract class BaseNode extends HTMLComponent implements Selectable {
     private static idCounter: number = 0;
 
     static setCounter(num: number) {
         this.idCounter = num;
     }
-
-    private htmlElement: HTMLDivElement | null;
 
     protected _label!: string;
     protected _type!: NodeClass;
@@ -71,7 +69,8 @@ export abstract class BaseNode implements HTMLComponent, Selectable {
         }) as T;
     }
 
-    constructor(pos: Vector2, nodeType: NodeClass, inputs: SocketPrototype<unknown>[] = [], outputs: SocketPrototype<unknown>[] = []) {
+    constructor(pos: Vector2, nodeType: NodeClass, inputs: SocketPrototype<unknown>[] = [], outputs: SocketPrototype<unknown>[] = [], parameters: NodeParameter<unknown>[]= []) {
+        super();
         this.uId = `n-${BaseNode.idCounter.toString().padStart(4, '0')}`;
         BaseNode.idCounter++;
         this._type = nodeType;
@@ -79,8 +78,12 @@ export abstract class BaseNode implements HTMLComponent, Selectable {
         this.dirty = false;
         this._input = inputs.map((prototype, idx) => new Socket({ ...prototype, uId: `i-${this.uId}-${idx}` }));
         this._output = outputs.map((prototype, idx) => new Socket({ ...prototype, uId: `o-${this.uId}-${idx}` }));
+        this._parameters = parameters.map((param, idx) => {
+            param.setUid(`p-${this.uId}-${idx}`);
+            return param;
+        });
 
-        this.htmlElement = null;
+
         this.selected = false;
     }
 
@@ -100,7 +103,7 @@ export abstract class BaseNode implements HTMLComponent, Selectable {
                 <span>${this.label}</span>
             </div>
             <div class="body">
-            ${this.output.map((socket) =>
+            ${this.output.filter(socket => !socket.hidden).map((socket) =>
             `
                     <div class="socket-row output">
                         <span>${socket.label}</span>
@@ -108,8 +111,9 @@ export abstract class BaseNode implements HTMLComponent, Selectable {
                     </div>
                     `
         )}
+            ${this.parameters.map(p =>p.generateTemplate().innerHTML)}
 
-            ${this.input.map((socket) =>
+            ${this.input.filter(socket => !socket.hidden).map((socket) =>
             `
                     <div class="socket-row input">
                         <span>${socket.label}</span>
@@ -165,19 +169,6 @@ export abstract class BaseNode implements HTMLComponent, Selectable {
                 return `<input type="color" id="input-${socket.uId}" value="${s.value?.toHex()}" />`;
             }
         }
-    }
-
-    generateTemplate(): HTMLTemplateElement {
-        if (this.htmlElement) return this.htmlElement.parentElement as HTMLTemplateElement;
-
-        const template = document.createElement('template');
-        template.innerHTML = this.getHtml();
-        this.htmlElement = template.content.firstElementChild as HTMLDivElement;
-        return template;
-    }
-
-    getOuterElement(): HTMLElement | null {
-        return this.htmlElement;
     }
 
     setListeners(): void {
@@ -285,11 +276,10 @@ export abstract class BaseNode implements HTMLComponent, Selectable {
                 }
             }
         }
-    }
 
-    destroy(): void {
-        this.htmlElement?.remove();
-        this.htmlElement = null;
+        for (const param of this._parameters) {
+            param.setListeners();
+        }
     }
 
     toJSON(): SerializedNode {

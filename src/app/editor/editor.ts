@@ -4,8 +4,7 @@ import { GlEnviroment } from "../gl/gl-enviroment";
 import { BaseNode } from "../node/core/base-node";
 import { NodeCompiler } from "../node/core/compiler/node-compiler";
 import { NodeEngine } from "../node/core/node-engine";
-import { CoordinatesNode } from "../node/node-defs/input/coordinates.node";
-import { OutputNode } from "../node/node-defs/output/output.node";
+import * as Node from "../node/node-defs/node-defs";
 import { DragAction, getDragAction, SelectAction } from "./input-handler";
 
 export class NodeEditor {
@@ -32,7 +31,8 @@ export class NodeEditor {
         this.glEnviroment = new GlEnviroment('gl-output');
         this.nodeEngine = new NodeEngine(this.glEnviroment.uniforms, (code) => this.glEnviroment.refreshProgram(code));
 
-        this.nodeEngine.addNode(new OutputNode(new Vector2()));
+        this.nodeEngine.addNode(new Node.OutputNode(new Vector2()));
+        this.nodeEngine.addNode(new Node.SeparateNode(new Vector2()));
 
         this.camera = new Camera(new Vector2(), 1, new Vector2(this.boardDiv.clientWidth, this.boardDiv.clientHeight));
         this.addNodesToBoard();
@@ -220,7 +220,8 @@ export class NodeEditor {
         });
 
         this.setNodeButtonListeners([
-            ['btn-coordinates',CoordinatesNode]
+            ['btn-coordinates', Node.CoordinatesNode],
+            ['btn-separate', Node.SeparateNode],
         ]);
     }
 

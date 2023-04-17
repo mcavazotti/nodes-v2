@@ -1,16 +1,19 @@
 import { HTMLComponent } from "../../core/render/html-component";
 
-export abstract class NodeParameter<T> implements HTMLComponent {
+export abstract class NodeParameter<T> extends HTMLComponent {
     dirty: boolean;
-    constructor(public readonly label: string, public value?: T) {
+    uId!: string;
+    constructor(public readonly label: string, protected onValueChange: (val: T) => void, public value: T | null = null, uId?: string) {
+        super();
         this.dirty = false;
+        if (uId)
+            this.uId = uId;
     }
-    getOuterElement(): HTMLElement {
-        throw new Error("Method not implemented.");
+
+    setUid(uId: string) {
+        this.uId = uId;
     }
 
     abstract getHtml(): string;
-    abstract setListeners(): void
-    abstract destroy(): void
-    abstract validateInput(val: T): boolean;
+    abstract setListeners(): void;
 }

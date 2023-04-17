@@ -10,4 +10,6 @@ export enum NodeId {
     coordinates = "coordinates",
     // output
     output = "output",
+    // transform
+    separate = "separate",
 }
