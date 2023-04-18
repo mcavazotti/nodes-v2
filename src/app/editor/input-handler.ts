@@ -15,13 +15,13 @@ export interface SelectAction {
     id: string;
 }
 
-export function getDragAction(event: MouseEvent, camera: Camera): DragAction | null {
+export function getDragAction(event: MouseEvent, camera: Camera, canvasElement: HTMLCanvasElement): DragAction | null {
     let element = event.target as HTMLElement;
     if (element.id?.includes('socket-'))
         return {
             element: 'socket',
             id: element.dataset.socketId,
-            initialMousePos: new Vector2(event.clientX, event.clientY),
+            initialMousePos: new Vector2(event.clientX - canvasElement.getBoundingClientRect().left, event.clientY - canvasElement.getBoundingClientRect().top),
             initialMousePosWorld: camera.convertRasterToWorld(new Vector2(event.clientX, event.clientY)),
             elementPos: new Vector2(element.offsetLeft, element.offsetTop),
             htmlElement: element,

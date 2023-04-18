@@ -34,17 +34,26 @@ export class SeparateNode extends BaseNode {
                         switch (val) {
                             case 'v2':
                                 this._label = 'Separate XY';
-                                this._input.forEach((s, idx) => { s.hidden = idx != 0 });
+                                this._input.forEach((s, idx) => {
+                                    s.hidden = idx != 0;
+                                    if (s.hidden) s.connection = null
+                                });
                                 this._output.forEach((s, idx) => { s.hidden = idx > 1 });
                                 break;
                             case 'v3':
                                 this._label = 'Separate XYZ';
-                                this._input.forEach((s, idx) => { s.hidden = idx != 1 });
+                                this._input.forEach((s, idx) => {
+                                    s.hidden = idx != 1;
+                                    if (s.hidden) s.connection = null
+                                });
                                 this._output.forEach((s, idx) => { s.hidden = idx > 2 });
                                 break;
                             case 'v4':
                                 this._label = 'Separate XYZW';
-                                this._input.forEach((s, idx) => { s.hidden = idx != 2 });
+                                this._input.forEach((s, idx) => {
+                                    s.hidden = idx != 2;
+                                    if (s.hidden) s.connection = null
+                                });
                                 this._output.forEach((s, idx) => { s.hidden = idx > 3 });
                                 break;
                         }

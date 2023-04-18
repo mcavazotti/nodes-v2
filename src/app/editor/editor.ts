@@ -1,5 +1,6 @@
 import { Vector2 } from "../core/math/vector";
 import { Camera } from "../core/render/camera";
+import { cubicBelzier } from "../core/render/canvas-primitives";
 import { GlEnviroment } from "../gl/gl-enviroment";
 import { BaseNode } from "../node/core/base-node";
 import { NodeCompiler } from "../node/core/compiler/node-compiler";
@@ -113,7 +114,7 @@ export class NodeEditor {
     private setInputHandlers() {
         this.boardDiv.addEventListener('mousedown', (ev) => {
             if (ev.button == 0) {
-                this.inputState.drag = getDragAction(ev, this.camera);
+                this.inputState.drag = getDragAction(ev, this.camera, this.canvasElement);
                 if (this.inputState.select && this.inputState.select.id != this.inputState.drag?.id)
                     this.nodeEngine.getNodeById(this.inputState.select.id)!.setSelection(false);
 
@@ -136,12 +137,27 @@ export class NodeEditor {
         });
 
         this.boardDiv.addEventListener('mouseup', (ev) => {
+            if (this.inputState.drag?.element == 'socket' && (ev.target as HTMLElement)?.id.includes('socket-')) {
+                try {
+                    this.nodeEngine.createConnection(this.inputState.drag.id!, (ev.target as HTMLElement).dataset.socketId!);
+                } catch (error) {
+                    throw error;
+                } finally {
+                    if (this.inputState.drag) this.inputState.drag = null;
+                }
+
+                this.canvasContext.clearRect(0, 0, this.canvasElement.width, this.canvasElement.height);
+                this.drawConnections();
+
+            }
+
             if (this.inputState.drag) this.inputState.drag = null;
         });
 
         this.boardDiv.addEventListener('mousemove', (ev) => {
-            this.canvasContext.fillStyle='tomato'
-            this.canvasContext.fillRect(ev.clientX, ev.clientY, 10, 10)
+            this.canvasContext.clearRect(0, 0, this.canvasElement.width, this.canvasElement.height);
+            this.drawConnections();
+
             if (this.inputState.drag) {
                 switch (this.inputState.drag.element) {
                     case 'node':
@@ -167,16 +183,26 @@ export class NodeEditor {
                         }
                     case 'socket':
                         {
-                            console.log('move')
-                            // this.canvasContext.clearRect(0,0, this.canvasElement.width, this.canvasElement.height);
-                            console.log(this.inputState.drag.initialMousePos.x, this.inputState.drag.initialMousePos.y)
-                            console.log(ev.clientX, ev.clientY)
-                            this.canvasContext.beginPath();
+
+                            const centerPoint = new Vector2(this.inputState.drag.htmlElement!.getBoundingClientRect().left + (this.inputState.drag.htmlElement!.getBoundingClientRect().width / 2),
+                                this.inputState.drag.htmlElement!.getBoundingClientRect().top + (this.inputState.drag.htmlElement!.getBoundingClientRect().height / 2));
+                            const correctedCenter = centerPoint.sub(new Vector2(this.canvasElement.getBoundingClientRect().left, this.canvasElement.getBoundingClientRect().top));
+
+                            const mousePos = new Vector2(ev.clientX - this.canvasElement.getBoundingClientRect().left, ev.clientY - this.canvasElement.getBoundingClientRect().top);
+
                             this.canvasContext.strokeStyle = 'white';
-                            this.canvasContext.moveTo(this.inputState.drag.initialMousePos.x, this.inputState.drag.initialMousePos.y);
-                            this.canvasContext.lineTo(ev.clientX, ev.clientY);
-                            this.canvasContext.fillRect(ev.clientX, ev.clientY,10,10)
+                            this.canvasContext.lineWidth = 4;
+
+                            this.canvasContext.beginPath();
+                            cubicBelzier(this.canvasContext, [
+                                correctedCenter,
+                                correctedCenter.add(new Vector2(100, 0)),
+                                mousePos.add(new Vector2(-100, 0)),
+                                mousePos
+                            ]);
                             this.canvasContext.stroke();
+
+
                             break;
                         }
                 }
@@ -197,7 +223,8 @@ export class NodeEditor {
                 this.setNodePosition(n);
             }
 
-
+            this.canvasContext.clearRect(0, 0, this.canvasElement.width, this.canvasElement.height);
+            this.drawConnections();
 
         });
 
@@ -254,6 +281,39 @@ export class NodeEditor {
                 this.addNodesToBoard();
             });
         }
+    }
+
+
+    private drawConnections() {
+        const connections = this.nodeEngine.getConnections();
+        this.canvasContext.beginPath();
+
+        for (const connection of connections) {
+            const socket1 = document.getElementById(`socket-${connection[0]}`)!;
+            const socket2 = document.getElementById(`socket-${connection[1]}`)!;
+
+            const centerPoint1 = new Vector2(socket1?.getBoundingClientRect().left + (socket1?.getBoundingClientRect().width / 2),
+                socket1?.getBoundingClientRect().top + (socket1?.getBoundingClientRect().height / 2));
+            const centerPoint2 = new Vector2(socket2?.getBoundingClientRect().left + (socket2?.getBoundingClientRect().width / 2),
+                socket2?.getBoundingClientRect().top + (socket2?.getBoundingClientRect().height / 2));
+
+            const correctedCenter1 = centerPoint1.sub(new Vector2(this.canvasElement.getBoundingClientRect().left, this.canvasElement.getBoundingClientRect().top));
+            const correctedCenter2 = centerPoint2.sub(new Vector2(this.canvasElement.getBoundingClientRect().left, this.canvasElement.getBoundingClientRect().top));
+
+            if ((correctedCenter1.sub(correctedCenter2)).length < 200) {
+                this.canvasContext.moveTo(correctedCenter1.x, correctedCenter1.y);
+                this.canvasContext.lineTo(correctedCenter2.x, correctedCenter2.y);
+            } else {
+                cubicBelzier(this.canvasContext, [
+                    correctedCenter1,
+                    correctedCenter1.add(new Vector2(100, 0)),
+                    correctedCenter2.add(new Vector2(-100, 0)),
+                    correctedCenter2
+                ]);
+            }
+        }
+
+        this.canvasContext.stroke();
     }
 
     setNodePosition(node: BaseNode) {

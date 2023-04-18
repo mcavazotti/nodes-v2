@@ -1,6 +1,7 @@
 import { CoordinatesNode } from "../node-defs/input/coordinates.node";
 import { OutputNode } from "../node-defs/output/output.node";
 import { BaseNode } from "./base-node";
+import { convertSocketTypes } from "./compiler/code-gen-helpers";
 import { CompilationDoneFunc, NodeCompiler } from "./compiler/node-compiler";
 import { Socket } from "./socket";
 import { NodeClass, NodeId } from "./types/node-classes";
@@ -80,7 +81,30 @@ export class NodeEngine {
         return this._nodes.get(socket.uId.match(/n-\d{4}/)![0])!
     }
 
-    getConnections(): [string,string][] {
-        return Array.from(this._sockets.values()).filter(s=> s.role == 'input' && s.connection).map(s => [s.connection![0],s.uId]);
+    getConnections(): [string, string][] {
+        return Array.from(this._sockets.values()).filter(s => s.role == 'input' && s.connection).map(s => [s.connection![0], s.uId]);
+    }
+
+    createConnection(socket1: string, socket2: string) {
+        const sock1 = this._sockets.get(socket1)!;
+        const sock2 = this._sockets.get(socket2)!;
+
+        const input = sock1.role == 'input' ? sock1 : sock2;
+        const output = sock1.role == 'output' ? sock1 : sock2;
+
+        // test validity of connection
+        convertSocketTypes(output.type, input.type, '');
+        this._nodeCompiler.transverseNodes(this.getSocketParent(input), this._nodes, {
+            definitions: new Map(),
+            visitedNode: new Set(),
+            visiting: new Set(),
+            mainCode: ""
+        });
+
+
+        input.connection = [output.uId, output.type];
+
+        this.getSocketParent(input).updateNode({inputSockets:true});
+        this._nodeCompiler.compile();
     }
 }

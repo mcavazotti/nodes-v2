@@ -305,7 +305,7 @@ export abstract class BaseNode extends HTMLComponent implements Selectable {
         }
     }
 
-    protected updateNode(updates: {
+    updateNode(updates: {
         label?: boolean;
         inputSockets?: boolean;
         outputSockets?: boolean;
