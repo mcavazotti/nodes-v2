@@ -89,6 +89,8 @@ export class NodeEditor {
         this.hostDiv.appendChild(ui.content);
         this.canvasElement = this.hostDiv.getElementsByTagName('canvas').item(0) as HTMLCanvasElement;
         this.canvasContext = this.canvasElement.getContext('2d')!;
+        this.canvasElement.width = this.canvasElement.getBoundingClientRect().width;
+        this.canvasElement.height = this.canvasElement.getBoundingClientRect().height;
 
         this.boardDiv = document.getElementById('board') as HTMLDivElement;
     }
@@ -138,6 +140,8 @@ export class NodeEditor {
         });
 
         this.boardDiv.addEventListener('mousemove', (ev) => {
+            this.canvasContext.fillStyle='tomato'
+            this.canvasContext.fillRect(ev.clientX, ev.clientY, 10, 10)
             if (this.inputState.drag) {
                 switch (this.inputState.drag.element) {
                     case 'node':
@@ -159,6 +163,20 @@ export class NodeEditor {
                             for (const n of this.nodeEngine.getNodes()) {
                                 this.setNodePosition(n);
                             }
+                            break;
+                        }
+                    case 'socket':
+                        {
+                            console.log('move')
+                            // this.canvasContext.clearRect(0,0, this.canvasElement.width, this.canvasElement.height);
+                            console.log(this.inputState.drag.initialMousePos.x, this.inputState.drag.initialMousePos.y)
+                            console.log(ev.clientX, ev.clientY)
+                            this.canvasContext.beginPath();
+                            this.canvasContext.strokeStyle = 'white';
+                            this.canvasContext.moveTo(this.inputState.drag.initialMousePos.x, this.inputState.drag.initialMousePos.y);
+                            this.canvasContext.lineTo(ev.clientX, ev.clientY);
+                            this.canvasContext.fillRect(ev.clientX, ev.clientY,10,10)
+                            this.canvasContext.stroke();
                             break;
                         }
                 }
@@ -229,8 +247,8 @@ export class NodeEditor {
         ]);
     }
 
-    private setNodeButtonListeners(buttonEntries: [string, new (...args: any[]) => BaseNode][] ) {
-        for(const button of buttonEntries ) {
+    private setNodeButtonListeners(buttonEntries: [string, new (...args: any[]) => BaseNode][]) {
+        for (const button of buttonEntries) {
             document.getElementById(button[0])!.addEventListener('click', () => {
                 this.nodeEngine.addNode(new button[1](this.camera.position.copy()));
                 this.addNodesToBoard();

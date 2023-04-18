@@ -79,4 +79,8 @@ export class NodeEngine {
     getSocketParent(socket: Socket<unknown>): BaseNode {
         return this._nodes.get(socket.uId.match(/n-\d{4}/)![0])!
     }
+
+    getConnections(): [string,string][] {
+        return Array.from(this._sockets.values()).filter(s=> s.role == 'input' && s.connection).map(s => [s.connection![0],s.uId]);
+    }
 }
