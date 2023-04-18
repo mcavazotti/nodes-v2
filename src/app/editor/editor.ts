@@ -5,6 +5,7 @@ import { BaseNode } from "../node/core/base-node";
 import { NodeCompiler } from "../node/core/compiler/node-compiler";
 import { NodeEngine } from "../node/core/node-engine";
 import * as Node from "../node/node-defs/node-defs";
+import { SelectorParam } from "../node/node-parameters/selector.parameter";
 import { DragAction, getDragAction, SelectAction } from "./input-handler";
 
 export class NodeEditor {
@@ -96,7 +97,10 @@ export class NodeEditor {
         this.boardDiv.replaceChildren();
         for (const node of this.nodeEngine.getNodes()) {
             node.destroy();
-            this.boardDiv.appendChild(node.generateTemplate().content);
+            const template = document.createElement('template');
+            template.innerHTML = node.getHtml();
+            this.boardDiv.appendChild(template.content);
+            node.setHTMLElement();
             node.setListeners();
             this.setNodePosition(node);
         }

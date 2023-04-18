@@ -5,7 +5,7 @@ import { Vector2, Vector3, Vector4 } from "../../core/math/vector";
 import { HTMLComponent } from "../../core/render/html-component";
 import { SocketPrototype } from "./types/socket-prototype";
 import { SocketType } from "./types/socket-types";
-import {  ColorRGBA } from "../../core/math/color";
+import { ColorRGBA } from "../../core/math/color";
 import { SerializedNode } from "./types/serialized-types";
 import { Selectable } from "../../core/render/selectable";
 import { NodeCompiler } from "./compiler/node-compiler";
@@ -69,7 +69,7 @@ export abstract class BaseNode extends HTMLComponent implements Selectable {
         }) as T;
     }
 
-    constructor(pos: Vector2, nodeType: NodeClass, inputs: SocketPrototype<unknown>[] = [], outputs: SocketPrototype<unknown>[] = [], parameters: NodeParameter<unknown>[]= []) {
+    constructor(pos: Vector2, nodeType: NodeClass, inputs: SocketPrototype<unknown>[] = [], outputs: SocketPrototype<unknown>[] = [], parameters: NodeParameter<unknown>[] = []) {
         super();
         this.uId = `n-${BaseNode.idCounter.toString().padStart(4, '0')}`;
         BaseNode.idCounter++;
@@ -89,11 +89,14 @@ export abstract class BaseNode extends HTMLComponent implements Selectable {
 
     setSelection(selectState: boolean): void {
         this.selected = selectState;
-        if (!this.getOuterElement()) this.generateTemplate();
         if (selectState)
             this.getOuterElement()!.classList.add('selected', 'top');
         else
             this.getOuterElement()!.classList.remove('selected', 'top');
+    }
+
+    htmlElementGetter(): HTMLElement {
+        return document.getElementById(`node-${this.uId}`)!;
     }
 
     getHtml(): string {
@@ -103,27 +106,30 @@ export abstract class BaseNode extends HTMLComponent implements Selectable {
                 <span>${this.label}</span>
             </div>
             <div class="body">
-            ${this.output.filter(socket => !socket.hidden).map((socket) =>
-            `
-                    <div class="socket-row output">
-                        <span>${socket.label}</span>
-                        <div class="socket ${socket.type}" id="socket-${socket.uId}" data-socket-id="${socket.uId}"></div>
-                    </div>
-                    `
-        )}
-            ${this.parameters.map(p =>p.generateTemplate().innerHTML)}
-
-            ${this.input.filter(socket => !socket.hidden).map((socket) =>
-            `
-                    <div class="socket-row input">
-                        <span>${socket.label}</span>
-                        <div class="socket ${socket.type}" id="socket-${socket.uId}" data-socket-id="${socket.uId}"></div>
-                    </div>
-                    ${socket.connection ? '' : `<div class="socket-row">${this.generateInput(socket)}</div>`}
-                `
-        )}
+                <div id="output-sockets-${this.uId}">
+                    ${this.getSocketHtml('output')}
+                </div>
+                <div id="parameters-${this.uId}">
+                    ${this.getParametersHtml()}
+                </div>
+                <div id="input-sockets-${this.uId}">
+                    ${this.getSocketHtml('input')}
+                </div>
             </div>
         </div>`;
+    }
+
+    private getSocketHtml(type: 'input' | 'output'): string {
+        const sockets = type == 'input' ? this._input : this._output;
+        return sockets.filter(socket => !socket.hidden).map((socket) =>
+            `
+                    <div class="socket-row ${type}">
+                        <span>${socket.label}</span>
+                        <div class="socket ${socket.type}" id="socket-${socket.uId}" data-socket-id="${socket.uId}"></div>
+                    </div>
+                    ${socket.connection || type == 'output' ? '' : `<div class="socket-row">${this.generateInput(socket)}</div>`}
+            `
+        ).reduce((a, b) => a + '\n' + b, '');
     }
 
     private generateInput(socket: Socket<unknown>): string {
@@ -134,13 +140,15 @@ export abstract class BaseNode extends HTMLComponent implements Selectable {
             }
             case SocketType.float: {
                 const s = socket as Socket<number>;
-                return `<input type="number" id="input-${socket.uId}" value="${s.value}" />`;
-
+                return `
+                <div class="socket-numeric-input">
+                    <input type="number" id="input-${socket.uId}" value="${s.value}" />
+                </div>`;
             }
             case SocketType.vector2: {
                 const s = socket as Socket<Vector2>;
                 return `
-                <div>
+                <div class="socket-numeric-input">
                     <input type="number" id="input-${socket.uId}-x" value="${s.value?.x}" />
                     <input type="number" id="input-${socket.uId}-y" value="${s.value?.y}" />
                 </div>`;
@@ -148,7 +156,7 @@ export abstract class BaseNode extends HTMLComponent implements Selectable {
             case SocketType.vector3: {
                 const s = socket as Socket<Vector3>;
                 return `
-                <div>
+                <div class="socket-numeric-input">
                     <input type="number" id="input-${socket.uId}-x" value="${s.value?.x}" />
                     <input type="number" id="input-${socket.uId}-y" value="${s.value?.y}" />
                     <input type="number" id="input-${socket.uId}-z" value="${s.value?.z}" />
@@ -157,7 +165,7 @@ export abstract class BaseNode extends HTMLComponent implements Selectable {
             case SocketType.vector4: {
                 const s = socket as Socket<Vector4>;
                 return `
-                <div>
+                <div class="socket-numeric-input">
                     <input type="number" id="input-${socket.uId}-x" value="${s.value?.x}" />
                     <input type="number" id="input-${socket.uId}-y" value="${s.value?.y}" />
                     <input type="number" id="input-${socket.uId}-z" value="${s.value?.z}" />
@@ -171,8 +179,21 @@ export abstract class BaseNode extends HTMLComponent implements Selectable {
         }
     }
 
+    private getParametersHtml(): string {
+        return this.parameters.map(p => `
+                <div class="parameter">
+                    ${p.getHtml()}
+                </div>`).reduce((a, b) => a + '\n' + b, '');
+    }
+
     setListeners(): void {
+        this.setSocketListeners();
+        this.setParameterListeners();
+    }
+
+    private setSocketListeners() {
         const nodeCompiler = NodeCompiler.getInstance();
+
         for (const socket of this._input) {
             switch (socket.type) {
                 case SocketType.bool: {
@@ -276,9 +297,32 @@ export abstract class BaseNode extends HTMLComponent implements Selectable {
                 }
             }
         }
+    }
 
+    private setParameterListeners() {
         for (const param of this._parameters) {
             param.setListeners();
+        }
+    }
+
+    protected updateNode(updates: {
+        label?: boolean;
+        inputSockets?: boolean;
+        outputSockets?: boolean;
+        // parameters?: boolean;
+    }) {
+        if (updates.label) {
+            const span = document.querySelector(`#node-${this.uId} .header span`) as HTMLSpanElement;
+            span.innerHTML = this._label;
+        }
+        if (updates.inputSockets) {
+            const div = document.getElementById(`input-sockets-${this.uId}`) as HTMLDivElement;
+            div.innerHTML = this.getSocketHtml('input');
+            this.setSocketListeners();
+        }
+        if (updates.outputSockets) {
+            const div = document.getElementById(`output-sockets-${this.uId}`) as HTMLDivElement;
+            div.innerHTML = this.getSocketHtml('output');
         }
     }
 

@@ -15,16 +15,17 @@ export class SelectorParam<T> extends NodeParameter<T> {
     getHtml(): string {
         return `
         <div id="${this.uId}">
-            <label for="${this.uId}">${this.label}</label>
-            <select name="${this.uId} value="${this.value}">
+            <label for="parameter-${this.uId}">${this.label}</label>
+            <select name="${this.uId}" id="parameter-${this.uId}">
                 ${this.options.map((o) => `<option value="${o.value}">${o.label}</option>`).join('\n')}
                 </select>
         </div>
         `;
     }
     setListeners(): void {
-        this.htmlElement!.getElementsByTagName('select')[0].addEventListener('change', (ev) => {
-            console.log(ev);
+        document.getElementById(`parameter-${this.uId}`)!.addEventListener('change', (ev) => {
+            this.value = (ev.target! as HTMLSelectElement).value as T;
+            this.onValueChange(this.value);
         })
     }
 

@@ -34,6 +34,9 @@ export function getDragAction(event: MouseEvent, camera: Camera): DragAction | n
             initialMousePosWorld: camera.convertRasterToWorld(new Vector2(event.clientX, event.clientY)),
         };
 
+    if (element.id?.includes('parameter-'))
+        return null;
+
     while (element && !element?.id.includes('node-')) element = element.parentElement!;
 
     if (element)

@@ -63,6 +63,11 @@ div.node {
             background-color: theme.$node-type-output-bg;
             color: theme.$node-type-output-text;
         }
+
+        &.transform {
+            background-color: theme.$node-type-transform-bg;
+            color: theme.$node-type-transform-text;
+        }
     }
 
     .body {
@@ -76,13 +81,16 @@ div.node {
             display: flex;
             align-items: center;
             justify-content: space-between;
+            gap: theme.$defaut-padding;
 
             &.output {
                 margin-right: 0 - 6px;
                 margin-left: theme.$defaut-margin * 2;
+                justify-content: flex-end;
             }
 
             &.input {
+                justify-content: flex-end;
                 flex-direction: row-reverse;
                 margin-left: 0 - 6px;
                 margin-right: theme.$defaut-margin * 2;
@@ -131,6 +139,16 @@ div.node {
                     ;
                 }
             }
+
+            .socket-numeric-input {
+                display: flex;
+                flex-direction: column;
+                width: 100px;
+            }
+        }
+
+        .parameter {
+            padding: theme.$defaut-padding;
         }
     }
 }

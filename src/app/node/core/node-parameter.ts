@@ -10,6 +10,10 @@ export abstract class NodeParameter<T> extends HTMLComponent {
             this.uId = uId;
     }
 
+    htmlElementGetter(): HTMLElement {
+        return document.getElementById(`parameter-${this.uId}`)!;
+    }
+
     setUid(uId: string) {
         this.uId = uId;
     }
