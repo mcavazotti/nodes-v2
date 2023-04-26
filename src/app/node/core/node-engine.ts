@@ -4,7 +4,7 @@ import { BaseNode } from "./base-node";
 import { convertSocketTypes } from "./compiler/code-gen-helpers";
 import { CompilationDoneFunc, NodeCompiler } from "./compiler/node-compiler";
 import { Socket } from "./socket";
-import { NodeClass, NodeId } from "./types/node-classes";
+import { NodeId } from "./types/node-classes";
 import { SerializedNode } from "./types/serialized-types";
 
 export class NodeEngine {
@@ -33,6 +33,11 @@ export class NodeEngine {
     getNodeById(id: string) {
         return this._nodes.get(id);
     }
+
+    getSocketById(id: string) {
+        return this._sockets.get(id);
+    }
+
     getNodes() {
         return Array.from(this._nodes.values());
     }
@@ -64,10 +69,10 @@ export class NodeEngine {
         for (const n of jsonContent) {
             switch (n.nodeId) {
                 case NodeId.output:
-                    this.addNode(BaseNode.fromJSON(OutputNode, n));
+                    this.addNode(BaseNode.fromJSON(OutputNode, n, this));
                     break;
                 case NodeId.coordinates:
-                    this.addNode(BaseNode.fromJSON(CoordinatesNode, n));
+                    this.addNode(BaseNode.fromJSON(CoordinatesNode, n, this));
                     break;
             }
         }
@@ -94,17 +99,34 @@ export class NodeEngine {
 
         // test validity of connection
         convertSocketTypes(output.type, input.type, '');
-        this._nodeCompiler.transverseNodes(this.getSocketParent(input), this._nodes, {
-            definitions: new Map(),
-            visitedNode: new Set(),
-            visiting: new Set(),
-            mainCode: ""
-        });
+        try {
+            input.connection = [output.uId, output.type];
 
+            this._nodeCompiler.transverseNodes(this.getSocketParent(input), this._nodes, {
+                definitions: new Map(),
+                visitedNode: new Set(),
+                visiting: new Set(),
+                mainCode: ""
+            });
+        } catch (error) {
+            console.error(error)
+            input.connection = null;
+        }
+        this.getSocketParent(input).updateNode({ inputSockets: true });
+        this._nodeCompiler.compile();
+    }
 
-        input.connection = [output.uId, output.type];
-
-        this.getSocketParent(input).updateNode({inputSockets:true});
+    deleteConnection(socketId: string) {
+        const socket = this._sockets.get(socketId)!;
+        if (socket.role == 'input') {
+            socket.connection = null;
+            this.getSocketParent(socket).updateNode({ inputSockets: true });
+        } else {
+            Array.from(this._sockets.values()).filter(s => s.role == 'input' && s.connection && s.connection[0] == socketId).forEach(s => {
+                s.connection = null;
+                this.getSocketParent(s).updateNode({ inputSockets: true });
+            });
+        }
         this._nodeCompiler.compile();
     }
 }

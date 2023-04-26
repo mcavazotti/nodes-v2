@@ -9,6 +9,7 @@ import { ColorRGBA } from "../../core/math/color";
 import { SerializedNode } from "./types/serialized-types";
 import { Selectable } from "../../core/render/selectable";
 import { NodeCompiler } from "./compiler/node-compiler";
+import { NodeEngine } from "./node-engine";
 
 export abstract class BaseNode extends HTMLComponent implements Selectable {
     private static idCounter: number = 0;
@@ -18,10 +19,11 @@ export abstract class BaseNode extends HTMLComponent implements Selectable {
     }
 
     protected _label!: string;
-    protected _type!: NodeClass;
-    protected _input!: Socket<unknown>[];
-    protected _output!: Socket<unknown>[];
-    protected _parameters!: NodeParameter<unknown>[];
+    protected _type: NodeClass;
+    protected _input: Socket<unknown>[];
+    protected _output: Socket<unknown>[];
+    protected _parameters: NodeParameter<unknown>[];
+    protected nodeEngine: NodeEngine;
     abstract readonly nodeId: NodeId;
 
     get label() { return this._label };
@@ -35,7 +37,7 @@ export abstract class BaseNode extends HTMLComponent implements Selectable {
     dirty: boolean;
     selected: boolean;
 
-    static fromJSON<T extends BaseNode>(type: new (...args: any[]) => T, json: SerializedNode) {
+    static fromJSON<T extends BaseNode>(type: new (...args: any[]) => T, json: SerializedNode, engine: NodeEngine) {
         return Object.create(type.prototype, {
             uId: {
                 value: json.uId,
@@ -69,8 +71,9 @@ export abstract class BaseNode extends HTMLComponent implements Selectable {
         }) as T;
     }
 
-    constructor(pos: Vector2, nodeType: NodeClass, inputs: SocketPrototype<unknown>[] = [], outputs: SocketPrototype<unknown>[] = [], parameters: NodeParameter<unknown>[] = []) {
+    constructor(engine: NodeEngine, pos: Vector2, nodeType: NodeClass, inputs: SocketPrototype<unknown>[] = [], outputs: SocketPrototype<unknown>[] = [], parameters: NodeParameter<unknown>[] = []) {
         super();
+        this.nodeEngine = engine;
         this.uId = `n-${BaseNode.idCounter.toString().padStart(4, '0')}`;
         BaseNode.idCounter++;
         this._type = nodeType;

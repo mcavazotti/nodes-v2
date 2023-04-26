@@ -1,6 +1,7 @@
 import { Vector2, Vector3, Vector4 } from "../../../core/math/vector";
 import { BaseNode } from "../../core/base-node";
 import { convertSocketTypes } from "../../core/compiler/code-gen-helpers";
+import { NodeEngine } from "../../core/node-engine";
 import { NodeParameter } from "../../core/node-parameter";
 import { Socket } from "../../core/socket";
 import { NodeClass, NodeId } from "../../core/types/node-classes";
@@ -11,8 +12,8 @@ export class SeparateNode extends BaseNode {
     private vectorType: 'v2' | 'v3' | 'v4' = 'v2';
 
     readonly nodeId = NodeId.separate;
-    constructor(pos: Vector2) {
-        super(pos, NodeClass.transform,
+    constructor(engine: NodeEngine, pos: Vector2) {
+        super(engine, pos, NodeClass.transform,
             [
                 { label: 'Vector', role: 'input', type: SocketType.vector2, value: new Vector2() },
                 { label: 'Vector', role: 'input', type: SocketType.vector3, value: new Vector3(), hidden: true },
@@ -36,25 +37,34 @@ export class SeparateNode extends BaseNode {
                                 this._label = 'Separate XY';
                                 this._input.forEach((s, idx) => {
                                     s.hidden = idx != 0;
-                                    if (s.hidden) s.connection = null
+                                    if (s.hidden) this.nodeEngine.deleteConnection(s.uId);
                                 });
-                                this._output.forEach((s, idx) => { s.hidden = idx > 1 });
+                                this._output.forEach((s, idx) => {
+                                    s.hidden = idx > 1;
+                                    if (s.hidden) this.nodeEngine.deleteConnection(s.uId);
+                                });
                                 break;
                             case 'v3':
                                 this._label = 'Separate XYZ';
                                 this._input.forEach((s, idx) => {
                                     s.hidden = idx != 1;
-                                    if (s.hidden) s.connection = null
+                                    if (s.hidden) this.nodeEngine.deleteConnection(s.uId);
                                 });
-                                this._output.forEach((s, idx) => { s.hidden = idx > 2 });
+                                this._output.forEach((s, idx) => {
+                                    s.hidden = idx > 2;
+                                    if (s.hidden) this.nodeEngine.deleteConnection(s.uId);
+                                });
                                 break;
                             case 'v4':
                                 this._label = 'Separate XYZW';
                                 this._input.forEach((s, idx) => {
                                     s.hidden = idx != 2;
-                                    if (s.hidden) s.connection = null
+                                    if (s.hidden) this.nodeEngine.deleteConnection(s.uId);
                                 });
-                                this._output.forEach((s, idx) => { s.hidden = idx > 3 });
+                                this._output.forEach((s, idx) => {
+                                    s.hidden = idx > 3;
+                                    if (s.hidden) this.nodeEngine.deleteConnection(s.uId);
+                                });
                                 break;
                         }
 

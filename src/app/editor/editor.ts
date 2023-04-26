@@ -33,8 +33,11 @@ export class NodeEditor {
         this.glEnviroment = new GlEnviroment('gl-output');
         this.nodeEngine = new NodeEngine(this.glEnviroment.uniforms, (code) => this.glEnviroment.refreshProgram(code));
 
-        this.nodeEngine.addNode(new Node.OutputNode(new Vector2()));
-        this.nodeEngine.addNode(new Node.SeparateNode(new Vector2()));
+        const output = new Node.OutputNode(this.nodeEngine, new Vector2());
+        const separate = new Node.SeparateNode(this.nodeEngine, new Vector2(-5));
+        output.input[0].connection = [separate.output[0].uId, separate.output[0].type];
+        this.nodeEngine.addNode(output);
+        this.nodeEngine.addNode(separate);
 
         this.camera = new Camera(new Vector2(), 1, new Vector2(this.boardDiv.clientWidth, this.boardDiv.clientHeight));
         this.addNodesToBoard();
@@ -107,6 +110,7 @@ export class NodeEditor {
             node.setListeners();
             this.setNodePosition(node);
         }
+        this.drawConnections();
     }
 
 
@@ -184,23 +188,34 @@ export class NodeEditor {
                     case 'socket':
                         {
 
-                            const centerPoint = new Vector2(this.inputState.drag.htmlElement!.getBoundingClientRect().left + (this.inputState.drag.htmlElement!.getBoundingClientRect().width / 2),
-                                this.inputState.drag.htmlElement!.getBoundingClientRect().top + (this.inputState.drag.htmlElement!.getBoundingClientRect().height / 2));
-                            const correctedCenter = centerPoint.sub(new Vector2(this.canvasElement.getBoundingClientRect().left, this.canvasElement.getBoundingClientRect().top));
+
+                            const socket = this.nodeEngine.getSocketById(this.inputState.drag.id!)!;
+
+
 
                             const mousePos = new Vector2(ev.clientX - this.canvasElement.getBoundingClientRect().left, ev.clientY - this.canvasElement.getBoundingClientRect().top);
 
-                            this.canvasContext.strokeStyle = 'white';
-                            this.canvasContext.lineWidth = 4;
+                            if (socket.role == 'input') {
+                                if (socket.connection) {
+                                    const outputSocketId = socket.connection[0];
+                                    const outputSocket = document.getElementById(`socket-${socket.connection[0]}`)!;
+                                    this.inputState.drag.id = outputSocketId;
+                                    this.inputState.drag.htmlElement = outputSocket;
 
-                            this.canvasContext.beginPath();
-                            cubicBelzier(this.canvasContext, [
-                                correctedCenter,
-                                correctedCenter.add(new Vector2(100, 0)),
-                                mousePos.add(new Vector2(-100, 0)),
-                                mousePos
-                            ]);
-                            this.canvasContext.stroke();
+                                    this.nodeEngine.deleteConnection(socket.uId);
+                                    this.canvasContext.beginPath();
+                                    this.setConnectionPath(mousePos, this.getSocketElementCenter(outputSocket));
+                                    this.canvasContext.stroke();
+                                } else {
+                                    this.canvasContext.beginPath();
+                                    this.setConnectionPath(mousePos, this.getSocketElementCenter(this.inputState.drag.htmlElement!));
+                                    this.canvasContext.stroke();
+                                }
+                            } else {
+                                this.canvasContext.beginPath();
+                                this.setConnectionPath(this.getSocketElementCenter(this.inputState.drag.htmlElement!), mousePos);
+                                this.canvasContext.stroke();
+                            }
 
 
                             break;
@@ -277,14 +292,39 @@ export class NodeEditor {
     private setNodeButtonListeners(buttonEntries: [string, new (...args: any[]) => BaseNode][]) {
         for (const button of buttonEntries) {
             document.getElementById(button[0])!.addEventListener('click', () => {
-                this.nodeEngine.addNode(new button[1](this.camera.position.copy()));
+                this.nodeEngine.addNode(new button[1](this.nodeEngine , this.camera.position.copy()));
                 this.addNodesToBoard();
             });
         }
     }
 
+    private getSocketElementCenter(socketElement: HTMLElement): Vector2 {
+        const borderTotalIncrement = 4;
+        const centerPoint = new Vector2(socketElement.getBoundingClientRect().left + ((socketElement.getBoundingClientRect().width - borderTotalIncrement) / 2),
+            socketElement.getBoundingClientRect().top + ((socketElement.getBoundingClientRect().height - borderTotalIncrement) / 2));
+        const correctedCenter = centerPoint.sub(new Vector2(this.canvasElement.getBoundingClientRect().left, this.canvasElement.getBoundingClientRect().top));
+
+        return correctedCenter;
+
+    }
+
+    private setConnectionPath(p1: Vector2, p2: Vector2) {
+        if ((p1.sub(p2)).length < 200) {
+            this.canvasContext.moveTo(p1.x, p1.y);
+            this.canvasContext.lineTo(p2.x, p2.y);
+        } else {
+            cubicBelzier(this.canvasContext, [
+                p1,
+                p1.add(new Vector2(100, 0)),
+                p2.add(new Vector2(-100, 0)),
+                p2
+            ]);
+        }
+    }
 
     private drawConnections() {
+        this.canvasContext.strokeStyle = 'white';
+        this.canvasContext.lineWidth = 2;
         const connections = this.nodeEngine.getConnections();
         this.canvasContext.beginPath();
 
@@ -292,25 +332,10 @@ export class NodeEditor {
             const socket1 = document.getElementById(`socket-${connection[0]}`)!;
             const socket2 = document.getElementById(`socket-${connection[1]}`)!;
 
-            const centerPoint1 = new Vector2(socket1?.getBoundingClientRect().left + (socket1?.getBoundingClientRect().width / 2),
-                socket1?.getBoundingClientRect().top + (socket1?.getBoundingClientRect().height / 2));
-            const centerPoint2 = new Vector2(socket2?.getBoundingClientRect().left + (socket2?.getBoundingClientRect().width / 2),
-                socket2?.getBoundingClientRect().top + (socket2?.getBoundingClientRect().height / 2));
+            const centerPoint1 = this.getSocketElementCenter(socket1);
+            const centerPoint2 = this.getSocketElementCenter(socket2);
 
-            const correctedCenter1 = centerPoint1.sub(new Vector2(this.canvasElement.getBoundingClientRect().left, this.canvasElement.getBoundingClientRect().top));
-            const correctedCenter2 = centerPoint2.sub(new Vector2(this.canvasElement.getBoundingClientRect().left, this.canvasElement.getBoundingClientRect().top));
-
-            if ((correctedCenter1.sub(correctedCenter2)).length < 200) {
-                this.canvasContext.moveTo(correctedCenter1.x, correctedCenter1.y);
-                this.canvasContext.lineTo(correctedCenter2.x, correctedCenter2.y);
-            } else {
-                cubicBelzier(this.canvasContext, [
-                    correctedCenter1,
-                    correctedCenter1.add(new Vector2(100, 0)),
-                    correctedCenter2.add(new Vector2(-100, 0)),
-                    correctedCenter2
-                ]);
-            }
+            this.setConnectionPath(centerPoint1, centerPoint2);
         }
 
         this.canvasContext.stroke();

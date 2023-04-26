@@ -24,7 +24,7 @@ export class SelectorParam<T> extends NodeParameter<T> {
     }
     setListeners(): void {
         document.getElementById(`parameter-${this.uId}`)!.addEventListener('change', (ev) => {
-            this.value = (ev.target! as HTMLSelectElement).value as T;
+            this.value = (ev.target! as HTMLSelectElement).value as unknown as T;
             this.onValueChange(this.value);
         })
     }
