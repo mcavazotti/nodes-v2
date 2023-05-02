@@ -6,7 +6,6 @@ import { BaseNode } from "../node/core/base-node";
 import { NodeCompiler } from "../node/core/compiler/node-compiler";
 import { NodeEngine } from "../node/core/node-engine";
 import * as Node from "../node/node-defs/node-defs";
-import { SelectorParam } from "../node/node-parameters/selector.parameter";
 import { DragAction, getDragAction, SelectAction } from "./input-handler";
 
 export class NodeEditor {
@@ -84,7 +83,7 @@ export class NodeEditor {
                     <h4>Conversion</h4>
                     <div>
                         <button id="btn-separate">Separate</button>
-                        <button id="btn-join">Join</button>
+                        <button id="btn-combine">Combine</button>
                     </div>
                 </div>
             </div>
@@ -286,6 +285,7 @@ export class NodeEditor {
         this.setNodeButtonListeners([
             ['btn-coordinates', Node.CoordinatesNode],
             ['btn-separate', Node.SeparateNode],
+            ['btn-combine', Node.CombineNode],
         ]);
     }
 

@@ -2,7 +2,7 @@ import { SocketType } from "../types/socket-types";
 
 export function convertSocketTypes(from: SocketType, to: SocketType, value: string): string {
     let error = Error(`Can't convert ${from} to ${to}.`);
-    if (from == to)
+    if (from == to || from == SocketType.color && to == SocketType.vector4 || from == SocketType.vector4 && to == SocketType.color)
         return value.toString();
 
     switch (from) {
@@ -45,6 +45,7 @@ export function convertSocketTypes(from: SocketType, to: SocketType, value: stri
                     throw error;
             }
         case SocketType.color:
+        case SocketType.vector4:
             switch (to) {
                 case SocketType.bool:
                     return `(length(${value}) != 0.0)`;

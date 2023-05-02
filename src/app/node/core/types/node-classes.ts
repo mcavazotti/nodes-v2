@@ -12,4 +12,5 @@ export enum NodeId {
     output = "output",
     // transform
     separate = "separate",
+    combine = "combine",
 }
