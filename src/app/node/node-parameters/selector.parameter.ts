@@ -1,3 +1,4 @@
+import { NodeCompiler } from "../core/compiler/node-compiler";
 import { NodeParameter } from "../core/node-parameter";
 export interface SelectorEntry<T> {
     label: string;
@@ -5,11 +6,13 @@ export interface SelectorEntry<T> {
 }
 
 export class SelectorParam<T> extends NodeParameter<T> {
+    private compiler = NodeCompiler.getInstance();
+
     getOuterElement(): HTMLElement {
         throw new Error("Method not implemented.");
     }
     constructor(label: string, public options: SelectorEntry<T>[], onValueChange: (val: T) => void, defaultValue: T | null = null) {
-        super(label, onValueChange, defaultValue);
+        super(label, onValueChange, defaultValue ?? options[0].value);
     }
 
     getHtml(): string {
@@ -17,7 +20,7 @@ export class SelectorParam<T> extends NodeParameter<T> {
         <div id="${this.uId}">
             <label for="parameter-${this.uId}">${this.label}</label>
             <select name="${this.uId}" id="parameter-${this.uId}">
-                ${this.options.map((o) => `<option value="${o.value}">${o.label}</option>`).join('\n')}
+                ${this.options.map((o) => `<option value="${o.value}" ${o.value == this.value ? 'selected ' : ''}>${o.label}</option>`).join('\n')}
                 </select>
         </div>
         `;
@@ -26,6 +29,7 @@ export class SelectorParam<T> extends NodeParameter<T> {
         document.getElementById(`parameter-${this.uId}`)!.addEventListener('change', (ev) => {
             this.value = (ev.target! as HTMLSelectElement).value as unknown as T;
             this.onValueChange(this.value);
+            this.compiler.compile();
         })
     }
 

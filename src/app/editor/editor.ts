@@ -86,6 +86,12 @@ export class NodeEditor {
                         <button id="btn-combine">Combine</button>
                     </div>
                 </div>
+                <div class="button-field">
+                    <h4>Math</h4>
+                    <div>
+                        <button id="btn-scalar-math">Math</button>
+                    </div>
+                </div>
             </div>
         </div>
         `;
@@ -286,6 +292,7 @@ export class NodeEditor {
             ['btn-coordinates', Node.CoordinatesNode],
             ['btn-separate', Node.SeparateNode],
             ['btn-combine', Node.CombineNode],
+            ['btn-scalar-math', Node.ScalarMathNode],
         ]);
     }
 

@@ -50,13 +50,16 @@ export class NodeEngine {
 
     removeNode(node: BaseNode): boolean {
         if (node.nodeId == NodeId.output) return false;
-        node.output.forEach(socket =>
-            Array.from(this._sockets.values())
-                .filter(s => s.role == 'input' && s.connection && s.connection[0] == socket.uId)
-                .forEach(s => s.connection = null)
-        );
-        node.input.forEach(s => this._sockets.delete(s.uId));
-        node.output.forEach(s => this._sockets.delete(s.uId));
+
+        node.input.forEach(s => {
+            this.deleteConnection(s.uId);
+            this._sockets.delete(s.uId);
+        });
+
+        node.output.forEach(s => {
+            this.deleteConnection(s.uId);
+            this._sockets.delete(s.uId);
+        });
 
         node.destroy();
         this._nodes.delete(node.uId);
@@ -117,16 +120,21 @@ export class NodeEngine {
     }
 
     deleteConnection(socketId: string) {
+        let deleteCount = 0;
         const socket = this._sockets.get(socketId)!;
         if (socket.role == 'input') {
+            if (socket.connection)
+                deleteCount++;
             socket.connection = null;
             this.getSocketParent(socket).updateNode({ inputSockets: true });
         } else {
             Array.from(this._sockets.values()).filter(s => s.role == 'input' && s.connection && s.connection[0] == socketId).forEach(s => {
                 s.connection = null;
+                deleteCount++;
                 this.getSocketParent(s).updateNode({ inputSockets: true });
             });
         }
-        this._nodeCompiler.compile();
+        if (deleteCount != 0)
+            this._nodeCompiler.compile();
     }
 }

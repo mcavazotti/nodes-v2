@@ -13,4 +13,7 @@ export enum NodeId {
     // transform
     separate = "separate",
     combine = "combine",
+    // math
+    scalarMath = "scalarMath",
+    vectorMath = "vectorMath",
 }

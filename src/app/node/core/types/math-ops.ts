@@ -1,0 +1,15 @@
+export enum MathOperations {
+    add="add",
+    sub="sub",
+    mult="mult",
+    divide="divide",
+    mod="mod",
+    sqrt="sqrt",
+    exp="exp",
+    gt="gt",
+    lt="lt",
+    eq="eq",
+    neq="neq",
+    get="get",
+    let="let",
+}
