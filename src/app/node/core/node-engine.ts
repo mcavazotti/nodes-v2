@@ -24,7 +24,9 @@ export class NodeEngine {
         this._nodeCompiler.setCompilationDoneListener((code) => {
             console.log(code);
             this.compileCalback(code);
-        })
+        });
+
+        this._nodeCompiler.beautifyCode = true;
     }
     getRootNode() {
         return [...this._nodes.values()].find((n) => n.nodeId == NodeId.output)!
